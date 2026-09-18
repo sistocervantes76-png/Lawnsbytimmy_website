@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lawns by Timmy | Weekly Lawn Mowing in Oakland Park &amp; Fort Lauderdale, FL</title>
+<meta name="description" content="Professional weekly and bi-weekly lawn mowing in Oakland Park and Fort Lauderdale, FL. Instant satellite quotes, dedicated route days, and automated billing.">
+<style>
+  :root {
+    --emerald: #2E7D32;
+    --emerald-dark: #1f5723;
+    --charcoal: #1A1A1A;
+    --white: #FFFFFF;
+    --amber: #F57C00;
+    --gray-bg: #F5F7F5;
+    --gray-border: #E0E4E0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--charcoal);
+    background: var(--white);
+    line-height: 1.55;
+  }
+
+  img { max-width: 100%; }
+
+  a { color: var(--emerald); }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* ---------- Sticky Header ---------- */
+  header.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-border);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+    gap: 16px;
+  }
+
+  .logo {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--charcoal);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  nav.main-nav {
+    display: flex;
+    gap: 24px;
+  }
+
+  nav.main-nav a {
+    color: var(--charcoal);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  nav.main-nav a:hover { color: var(--emerald); }
+
+  .btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    font-size: 0.95rem;
+  }
+
+  .btn-primary {
+    background: var(--emerald);
+    color: var(--white);
+  }
+  .btn-primary:hover { background: var(--emerald-dark); }
+
+  .btn-amber {
+    background: var(--amber);
+    color: var(--white);
+  }
+  .btn-amber:hover { background: #d96900; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--charcoal);
+    border: 2px solid var(--charcoal);
+  }
+
+  .header-cta { white-space: nowrap; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: linear-gradient(180deg, #EAF3EA 0%, var(--white) 100%);
+    padding: 56px 0 48px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+    margin: 0 0 16px;
+    color: var(--charcoal);
+    font-weight: 800;
+  }
+
+  .hero p.subhead {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    max-width: 700px;
+    margin: 0 auto 32px;
+    color: #3c3c3c;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  .value-props {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .value-prop {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .value-prop .icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+  .value-prop strong { display: block; margin-bottom: 4px; }
+  .value-prop span.desc { font-size: 0.92rem; color: #555; }
+
+  @media (max-width: 720px) {
+    .value-props { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Section headings ---------- */
+  section { padding: 56px 0; }
+  section.alt-bg { background: var(--gray-bg); }
+
+  h2.section-title {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 8px;
+  }
+
+  p.section-sub {
+    text-align: center;
+    color: #555;
+    max-width: 620px;
+    margin: 0 auto 36px;
+  }
+
+  /* ---------- Scope Cards ---------- */
+  .scope-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+
+  @media (max-width: 900px) {
+    .scope-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .scope-grid { grid-template-columns: 1fr; }
+  }
+
+  .scope-card {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: 12px;
+    padding: 22px;
+  }
+
+  .scope-card .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--emerald);
+    color: var(--white);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .scope-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .scope-card p { margin: 0; font-size: 0.92rem; color: #555; }
+
+  .callout {
+    margin-top: 28px;
+    background: #FFF4E5;
+    border: 1px solid var(--amber);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 0.92rem;
+    color: #6b4400;
+  }
+
+  /* ---------- Steps ---------- */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 800px) {
+    .steps-grid { grid-template-columns: 1fr; }
+  }
+
+  .step-card {
+    text-align: center;
+    padding: 10px;
+  }
+
+  .step-card .step-num {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--charcoal);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    margin: 0 auto 14px;
+  }
+
+  .step-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .step-card p { margin: 0; color: #555; font-size: 0.92rem; }
+
+  /* ---------- Lead Form ---------- */
+  .form-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: 14px;
+    padding: 32px;
+  }
+
+  .form-row { margin-bottom: 18px; }
+  .form-row-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 560px) {
+    .form-row-split { grid-template-columns: 1fr; }
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"],
+  input[type="tel"],
+  input[type="email"],
+  select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus {
+    outline: 2px solid var(--emerald);
+    outline-offset: 1px;
+  }
+
+  fieldset {
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 0;
+  }
+  fieldset legend {
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0 6px;
+  }
+
+  .choice-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.92rem;
+  }
+  .choice-row:last-child { margin-bottom: 0; }
+  .choice-row input { margin-top: 3px; }
+  .choice-row label { font-weight: 400; margin: 0; }
+
+  .radio-group, .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  button[type="submit"] {
+    width: 100%;
+    padding: 15px;
+    font-size: 1rem;
+    margin-top: 8px;
+  }
+
+  .form-success {
+    display: none;
+    background: #E8F5E9;
+    border: 1px solid var(--emerald);
+    color: var(--emerald-dark);
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-top: 18px;
+    font-size: 0.95rem;
+  }
+
+  .form-error {
+    display: none;
+    background: #FDECEA;
+    border: 1px solid #c0392b;
+    color: #7a1f13;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-top: 18px;
+    font-size: 0.9rem;
+  }
+
+  small.hint { color: #777; font-size: 0.82rem; display: block; margin-top: 4px; }
+
+  /* ---------- FAQ ---------- */
+  .faq-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  details.faq-item {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+
+  details.faq-item summary {
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  details.faq-item summary::-webkit-details-marker { display: none; }
+  details.faq-item summary::after {
+    content: "+";
+    font-size: 1.3rem;
+    color: var(--emerald);
+    margin-left: 12px;
+  }
+  details.faq-item[open] summary::after { content: "\2212"; }
+
+  details.faq-item p {
+    margin: 12px 0 0;
+    color: #444;
+    font-size: 0.95rem;
+  }
+
+  /* ---------- Footer ---------- */
+  footer.site-footer {
+    background: var(--charcoal);
+    color: #d9d9d9;
+    padding: 40px 0 24px;
+    font-size: 0.88rem;
+  }
+
+  footer.site-footer .footer-top {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  footer.site-footer h4 {
+    color: var(--white);
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+  }
+
+  footer.site-footer a { color: #d9d9d9; }
+  footer.site-footer .links a { margin-right: 16px; }
+
+  footer.site-footer .fine-print {
+    border-top: 1px solid #333;
+    padding-top: 16px;
+    color: #999;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .sticky-call-mobile {
+    display: none;
+  }
+  @media (max-width: 640px) {
+    nav.main-nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="#top">Lawns by Timmy 🌿</a>
+    <nav class="main-nav">
+      <a href="#services">Services</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#faqs">FAQs</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="tel:+19548803500">Call (954) 880-3500</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <h1>Flawless Lawns. Zero Hassle. Dependable Stripes Every Week.</h1>
+      <p class="subhead">Professional weekly and bi-weekly mowing, precision edging, and automated service updates for Oakland Park &amp; Fort Lauderdale homes.</p>
+
+      <div class="hero-ctas">
+        <a href="#quote-form" class="btn btn-primary">Get My Instant Quote</a>
+        <a href="tel:+19548803500" class="btn btn-outline">Call (954) 880-3500</a>
+      </div>
+
+      <div class="value-props">
+        <div class="value-prop">
+          <span class="icon">🛰️</span>
+          <strong>Satellite Quoting</strong>
+          <span class="desc">Accurate per-visit estimate instantly without waiting for an estimator.</span>
+        </div>
+        <div class="value-prop">
+          <span class="icon">📅</span>
+          <strong>Dedicated Route Days</strong>
+          <span class="desc">Clustered neighborhood routes for reliable, on-time weekly service.</span>
+        </div>
+        <div class="value-prop">
+          <span class="icon">💳</span>
+          <strong>Automated Payments</strong>
+          <span class="desc">Card-on-file auto-pay — no chasing invoices or handling cash.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES / SCOPE -->
+  <section id="services">
+    <div class="container">
+      <h2 class="section-title">Standard Mowing Scope &amp; Quality Matrix</h2>
+      <p class="section-sub">Every visit follows the same four-point checklist, so your lawn looks the same crisp way every single time.</p>
+
+      <div class="scope-grid">
+        <div class="scope-card">
+          <span class="num">1</span>
+          <h3>Precision Turf Mowing</h3>
+          <p>Set to optimal turf health heights (3.5" to 4.0") to protect against summer heat.</p>
+        </div>
+        <div class="scope-card">
+          <span class="num">2</span>
+          <h3>Hardscape Edging</h3>
+          <p>Crisp vertical lines along driveways, sidewalks, and patios.</p>
+        </div>
+        <div class="scope-card">
+          <span class="num">3</span>
+          <h3>Line Trimming</h3>
+          <p>Detailed string trimming around fences, trees, garden beds, and obstacles.</p>
+        </div>
+        <div class="scope-card">
+          <span class="num">4</span>
+          <h3>Hard Surface Blow-off</h3>
+          <p>Driveways, walkways, and patios thoroughly cleared of grass clippings before leaving.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Note:</strong> Lawns untrimmed for over 10 days require a one-time catch-up service to restore baseline turf health before recurring plan rates apply.
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="alt-bg" id="how-it-works">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-sub">Three steps from quote to your first mow — no phone tag required.</p>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Request Satellite Estimate</h3>
+          <p>Submit your address and property details in 60 seconds.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Lock In Your Route Day</h3>
+          <p>Review your quote, verify gate clearance, and link your card on file.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Sit Back &amp; Enjoy</h3>
+          <p>Get "On Our Way" text alerts before visits and instant digital confirmations after service.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEAD FORM -->
+  <section id="quote-form">
+    <div class="container">
+      <h2 class="section-title">Get My Instant Quote</h2>
+      <p class="section-sub">Tell us about your property and we'll text you a quote in minutes.</p>
+
+      <div class="form-wrap">
+        <form id="leadForm" novalidate>
+          <div class="form-row form-row-split">
+            <div>
+              <label for="first_name">First Name</label>
+              <input type="text" id="first_name" name="first_name" required autocomplete="given-name">
+            </div>
+            <div>
+              <label for="last_name">Last Name</label>
+              <input type="text" id="last_name" name="last_name" required autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="form-row form-row-split">
+            <div>
+              <label for="phone">Cell Phone</label>
+              <input type="tel" id="phone" name="phone" required autocomplete="tel" placeholder="(954) 555-0123">
+            </div>
+            <div>
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="choice-row">
+              <input type="checkbox" id="sms_consent" name="sms_consent" required>
+              <label for="sms_consent">I agree to receive SMS text updates about my service (message &amp; data rates may apply).</label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="service_address">Service Address</label>
+            <input type="text" id="service_address" name="service_address" required autocomplete="address-line1">
+          </div>
+
+          <div class="form-row form-row-split">
+            <div>
+              <label for="city">City</label>
+              <select id="city" name="city" required>
+                <option value="" disabled selected>Select city</option>
+                <option value="Oakland Park">Oakland Park</option>
+                <option value="Fort Lauderdale">Fort Lauderdale</option>
+              </select>
+            </div>
+            <div>
+              <label for="zip">Zip Code</label>
+              <input type="text" id="zip" name="zip" required inputmode="numeric" pattern="[0-9]{5}" autocomplete="postal-code">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <fieldset>
+              <legend>Gate Clearance Width</legend>
+              <div class="radio-group">
+                <div class="choice-row">
+                  <input type="radio" id="gate_wide" name="gate_width" value="48" required>
+                  <label for="gate_wide">Gate is at least 36–48"+ wide (fits commercial zero-turn mowers)</label>
+                </div>
+                <div class="choice-row">
+                  <input type="radio" id="gate_narrow" name="gate_width" value="30" required>
+                  <label for="gate_narrow">Standard walk gate (under 36" wide)</label>
+                </div>
+              </div>
+              <small class="hint">Narrower gates may require push-mower labor and a small service adjustment.</small>
+            </fieldset>
+          </div>
+
+          <div class="form-row">
+            <div class="choice-row">
+              <input type="checkbox" id="pets_secured" name="pets_secured" required>
+              <label for="pets_secured">I confirm pets will be secured indoors during our scheduled service window.</label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <fieldset>
+              <legend>Service Frequency</legend>
+              <div class="radio-group">
+                <div class="choice-row">
+                  <input type="radio" id="freq_weekly" name="frequency" value="Weekly" required>
+                  <label for="freq_weekly">Weekly Mowing</label>
+                </div>
+                <div class="choice-row">
+                  <input type="radio" id="freq_biweekly" name="frequency" value="Bi-Weekly" required>
+                  <label for="freq_biweekly">Bi-Weekly Mowing</label>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="form-row">
+            <fieldset>
+              <legend>Add-On Requests (optional)</legend>
+              <div class="checkbox-group">
+                <div class="choice-row">
+                  <input type="checkbox" name="add_ons" value="Core Aeration ($150)" id="addon_aeration">
+                  <label for="addon_aeration">Core Aeration ($150)</label>
+                </div>
+                <div class="choice-row">
+                  <input type="checkbox" name="add_ons" value="Shrub & Bed Maintenance" id="addon_shrub">
+                  <label for="addon_shrub">Shrub &amp; Bed Maintenance</label>
+                </div>
+                <div class="choice-row">
+                  <input type="checkbox" name="add_ons" value="Seasonal Property Cleanup" id="addon_cleanup">
+                  <label for="addon_cleanup">Seasonal Property Cleanup</label>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="form-row">
+            <div class="choice-row">
+              <input type="checkbox" id="card_on_file_agreed" name="card_on_file_agreed" required>
+              <label for="card_on_file_agreed">I agree to securely link a card on file for automated billing once my quote is confirmed. No service is scheduled without a card on file.</label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-amber">Get My Instant Quote</button>
+
+          <div class="form-success" id="formSuccess">
+            Thank you! Our automated system is calculating your satellite property estimate. Expect a text confirmation within 60 seconds!
+          </div>
+          <div class="form-error" id="formError">
+            Something went wrong sending your request. Please call us at <a href="tel:+19548803500">(954) 880-3500</a> and we'll get you a quote right away.
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="alt-bg" id="faqs">
+    <div class="container">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <div class="faq-wrap">
+        <details class="faq-item">
+          <summary>How do you handle gate codes and pets?</summary>
+          <p>Access codes are stored securely in our field app. Pets must be secured indoors and gates unlocked on scheduled route days.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What is your rain policy?</summary>
+          <p>If heavy rain delays service, routes shift by 24 to 48 hours as soon as the soil dries to prevent ground ruts.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How does billing work?</summary>
+          <p>We collect a card on file during account setup and process payment automatically after each completed service visit.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div>
+        <h4>Lawns by Timmy 🌿</h4>
+        <p>Oakland Park &amp; Fort Lauderdale, FL</p>
+        <p>
+          <a href="tel:+19548803500">(954) 880-3500</a><br>
+          <a href="mailto:info@lawnsbytimmy.com">info@lawnsbytimmy.com</a>
+        </p>
+      </div>
+      <div class="links">
+        <h4>Links</h4>
+        <p>
+          <a href="#services">Services</a><br>
+          <a href="#how-it-works">How It Works</a><br>
+          <a href="#faqs">FAQs</a>
+        </p>
+      </div>
+      <div class="links">
+        <h4>Legal</h4>
+        <p>
+          <a href="#">Terms of Service</a><br>
+          <a href="#">Privacy Policy</a>
+        </p>
+      </div>
+    </div>
+    <div class="fine-print">
+      &copy; <span id="year"></span> Lawns by Timmy. All rights reserved.<br>
+      By submitting the quote form above, you consent to receive automated SMS text messages (appointment reminders, service alerts, and billing confirmations) from Lawns by Timmy related to your service. Message and data rates may apply. Message frequency varies. Reply STOP to opt out at any time, or HELP for assistance.
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // ---------------------------------------------------------------
+  // CONFIG: paste your real webhook URL here (Make.com, Zapier, or
+  // your CRM's inbound webhook). Until this is set, form submissions
+  // are only logged to the browser console and will NOT reach you.
+  // ---------------------------------------------------------------
+  const LEAD_WEBHOOK_URL = "REPLACE_WITH_YOUR_WEBHOOK_URL";
+
+  const form = document.getElementById('leadForm');
+  const successBox = document.getElementById('formSuccess');
+  const errorBox = document.getElementById('formError');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    successBox.style.display = 'none';
+    errorBox.style.display = 'none';
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const data = new FormData(form);
+    const addOns = data.getAll('add_ons');
+
+    const payload = {
+      event: "lead_form_submitted",
+      timestamp: new Date().toISOString(),
+      lead_data: {
+        first_name: data.get('first_name') || "",
+        last_name: data.get('last_name') || "",
+        phone: data.get('phone') || "",
+        email: data.get('email') || "",
+        service_address: data.get('service_address') || "",
+        city: data.get('city') || "",
+        zip: data.get('zip') || "",
+        gate_width_inches: Number(data.get('gate_width')) || null,
+        pets_secured: data.get('pets_secured') === 'on',
+        frequency: data.get('frequency') || "",
+        add_ons: addOns,
+        card_on_file_agreed: data.get('card_on_file_agreed') === 'on'
+      }
+    };
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
+
+    try {
+      if (LEAD_WEBHOOK_URL && LEAD_WEBHOOK_URL !== "REPLACE_WITH_YOUR_WEBHOOK_URL") {
+        await fetch(LEAD_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        console.warn("LEAD_WEBHOOK_URL is not set yet. Lead data (not sent):", payload);
+      }
+      successBox.style.display = 'block';
+      form.reset();
+    } catch (err) {
+      console.error("Lead form submission failed:", err);
+      errorBox.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Get My Instant Quote";
+    }
+  });
+</script>
+
+</body>
+</html>
