@@ -745,11 +745,10 @@
   document.getElementById('year').textContent = new Date().getFullYear();
 
   // ---------------------------------------------------------------
-  // CONFIG: paste your real webhook URL here (Make.com, Zapier, or
-  // your CRM's inbound webhook). Until this is set, form submissions
-  // are only logged to the browser console and will NOT reach you.
+  // CONFIG: this is Timmy's Make.com scenario webhook. Every quote
+  // form submission is sent here as JSON for the automation to pick up.
   // ---------------------------------------------------------------
-  const LEAD_WEBHOOK_URL = "REPLACE_WITH_YOUR_WEBHOOK_URL";
+  const LEAD_WEBHOOK_URL = "https://hook.us2.make.com/pc7pdq8p8b8mh8ewwaplpt21mhwc0fuu";
 
   const form = document.getElementById('leadForm');
   const successBox = document.getElementById('formSuccess');

@@ -8,9 +8,9 @@ It is one self-contained file — `index.html` — with all the design (CSS) and
 - **Email (shown on the site):** info@lawnsbytimmy.com
 - **Service area:** Oakland Park & Fort Lauderdale, FL
 
-## Before this site can send you real leads
+## Lead form status: connected
 
-The "Get My Instant Quote" form is fully built, but it needs one piece of setup before it will actually deliver leads to you: a **webhook URL**. See `docs/webhook-setup.md` for a plain-English walkthrough — it takes about 5 minutes.
+The "Get My Instant Quote" form is fully wired up to Timmy's Make.com automation. Every submission is sent there instantly. See `docs/webhook-setup.md` if you ever need to change where it points (e.g. you rebuild the Make scenario and get a new address).
 
 ## Previewing the site on your own computer
 
