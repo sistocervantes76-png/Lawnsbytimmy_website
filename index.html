@@ -579,7 +579,7 @@
 
           <div class="form-row">
             <div class="choice-row">
-              <input type="checkbox" id="sms_consent" name="sms_consent" required>
+              <input type="checkbox" id="sms_consent" name="sms_consent">
               <label for="sms_consent">I consent to receive customer care text messages from Lawns by Timmy (appointment reminders, service alerts, billing confirmations). Messaging frequency may vary. Message and data rates may apply. Reply STOP to opt out at any time, or text HELP for assistance. See our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.</label>
             </div>
           </div>
@@ -774,6 +774,7 @@
         first_name: data.get('first_name') || "",
         last_name: data.get('last_name') || "",
         phone: data.get('phone') || "",
+        sms_consent: data.get('sms_consent') === 'on',
         email: data.get('email') || "",
         service_address: data.get('service_address') || "",
         city: data.get('city') || "",
