@@ -643,6 +643,17 @@
               </div>
             </fieldset>
           </div>
+          <div class="form-row">
+  <label for="lot_size">Lawn size (grass area only)</label>
+  <select id="lot_size" name="lot_size" required>
+    <option value="">Choose lawn size</option>
+    <option value="Small (under 5000 sqft)">Small — under 5,000 sq ft</option>
+    <option value="Medium (5000-10000)">Medium — 5,000 to under 10,000 sq ft</option>
+    <option value="Large (10000-20000)">Large — 10,000 to under 20,000 sq ft</option>
+    <option value="XL (20000+)">XL — 20,000+ sq ft</option>
+    <option value="Not sure">Not sure</option>
+  </select>
+</div>
 
           <div class="form-row">
             <fieldset>
@@ -776,6 +787,7 @@
         phone: data.get('phone') || "",
         sms_consent: data.get('sms_consent') === 'on',
         email: data.get('email') || "",
+        lot_size: data.get('lot_size') || "",
         service_address: data.get('service_address') || "",
         city: data.get('city') || "",
         zip: data.get('zip') || "",
