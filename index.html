@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lawns by Timmy | Weekly Lawn Mowing in Oakland Park &amp; Fort Lauderdale, FL</title>
-<meta name="description" content="Professional weekly and bi-weekly lawn mowing in Oakland Park and Fort Lauderdale, FL. Instant satellite quotes, dedicated route days, and automated billing.">
+<meta name="description" content="Professional weekly and bi-weekly lawn mowing in Oakland Park and Fort Lauderdale, FL. Instant price quotes, dedicated route days, and automated billing.">
 <style>
   :root {
     --emerald: #2E7D32;
@@ -438,6 +438,22 @@
     nav.main-nav { display: none; }
   }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Lawns by Timmy",
+  "url": "https://lawnsbytimmy.com",
+  "telephone": "+1-954-880-3500",
+  "email": "info@lawnsbytimmy.com",
+  "description": "Weekly and bi-weekly lawn mowing, edging, trimming and blow-off for homes in Oakland Park, Fort Lauderdale and Wilton Manors, FL.",
+  "areaServed": [
+    {"@type": "City", "name": "Oakland Park, FL"},
+    {"@type": "City", "name": "Fort Lauderdale, FL"},
+    {"@type": "City", "name": "Wilton Manors, FL"}
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -468,9 +484,9 @@
 
       <div class="value-props">
         <div class="value-prop">
-          <span class="icon">🛰️</span>
-          <strong>Satellite Quoting</strong>
-          <span class="desc">Accurate per-visit estimate instantly without waiting for an estimator.</span>
+          <span class="icon">⚡</span>
+          <strong>Instant Quoting</strong>
+          <span class="desc">Pick your yard size and get your per-visit price by email in about a minute. No waiting for an estimator.</span>
         </div>
         <div class="value-prop">
           <span class="icon">📅</span>
@@ -530,7 +546,7 @@
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-num">1</div>
-          <h3>Request Satellite Estimate</h3>
+          <h3>Get Your Instant Price</h3>
           <p>Submit your address and property details in 60 seconds.</p>
         </div>
         <div class="step-card">
@@ -551,7 +567,7 @@
   <section id="quote-form">
     <div class="container">
       <h2 class="section-title">Get My Instant Quote</h2>
-      <p class="section-sub">Tell us about your property and we'll text you a quote in minutes.</p>
+      <p class="section-sub">Tell us about your property and we'll email you your price in about a minute.</p>
 
       <div class="form-wrap">
         <form id="leadForm" novalidate>
@@ -596,6 +612,7 @@
                 <option value="" disabled selected>Select city</option>
                 <option value="Oakland Park">Oakland Park</option>
                 <option value="Fort Lauderdale">Fort Lauderdale</option>
+                <option value="Wilton Manors">Wilton Manors</option>
               </select>
             </div>
             <div>
@@ -610,7 +627,7 @@
               <div class="radio-group">
                 <div class="choice-row">
                   <input type="radio" id="gate_wide" name="gate_width" value="48" required>
-                  <label for="gate_wide">Gate is at least 36–48"+ wide (fits commercial zero-turn mowers)</label>
+                  <label for="gate_wide">Gate is 36" wide or wider (fits commercial zero-turn mowers)</label>
                 </div>
                 <div class="choice-row">
                   <input type="radio" id="gate_narrow" name="gate_width" value="30" required>
@@ -685,7 +702,7 @@
           <button type="submit" class="btn btn-amber">Get My Instant Quote</button>
 
           <div class="form-success" id="formSuccess">
-            Thank you! Our automated system is calculating your satellite property estimate. Expect a text confirmation within 60 seconds!
+            Thank you! Check your email. Your price is on its way, usually within a minute.
           </div>
           <div class="form-error" id="formError">
             Something went wrong sending your request. Please call us at <a href="tel:+19548803500">(954) 880-3500</a> and we'll get you a quote right away.
