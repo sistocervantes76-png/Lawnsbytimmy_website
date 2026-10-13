@@ -1,0 +1,14 @@
+{
+  // Cloudflare Workers config for lawnsbytimmy.com.
+  // The static site is served from the repo root; src/worker.js only handles /api/account/*.
+  "name": "lawnsbytimmy-website",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
+  },
+  // Keep the variables/secrets set in the Cloudflare dashboard on every deploy.
+  "keep_vars": true,
+  "observability": { "enabled": true }
+}
