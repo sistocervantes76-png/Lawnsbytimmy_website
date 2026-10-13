@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>My Account | Lawns by Timmy</title>
+<style>
+  :root {
+    --emerald: #2E7D32;
+    --emerald-dark: #1f5723;
+    --emerald-tint: #EAF3EA;
+    --charcoal: #1A1A1A;
+    --muted: #5b625b;
+    --white: #FFFFFF;
+    --amber: #F57C00;
+    --gray-bg: #F5F7F5;
+    --gray-border: #E0E4E0;
+    --red: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--charcoal);
+    background: var(--gray-bg);
+    line-height: 1.55;
+  }
+  a { color: var(--emerald); }
+  [hidden] { display: none !important; }
+
+  header.site-header { background: var(--white); border-bottom: 1px solid var(--gray-border); }
+  .header-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; max-width: 1000px; margin: 0 auto; gap: 12px;
+  }
+  .logo { font-size: 1.25rem; font-weight: 800; color: var(--charcoal); text-decoration: none; white-space: nowrap; }
+  .header-links { display: flex; gap: 16px; align-items: center; font-weight: 600; font-size: 0.95rem; }
+  .header-links a { color: var(--charcoal); text-decoration: none; }
+  .header-links a:hover { color: var(--emerald); }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  .btn {
+    display: inline-block; padding: 12px 20px; border-radius: 8px; font-weight: 700;
+    text-decoration: none; text-align: center; cursor: pointer; border: none; font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .btn:disabled { opacity: 0.6; cursor: wait; }
+  .btn-primary { background: var(--emerald); color: var(--white); }
+  .btn-primary:hover { background: var(--emerald-dark); }
+  .btn-outline { background: var(--white); color: var(--charcoal); border: 2px solid var(--gray-border); }
+  .btn-outline:hover { border-color: var(--charcoal); }
+  .btn-link { background: none; border: none; color: var(--muted); font-weight: 600; cursor: pointer; padding: 0; font: inherit; }
+  .btn-link:hover { color: var(--charcoal); text-decoration: underline; }
+
+  .card {
+    background: var(--white); border: 1px solid var(--gray-border); border-radius: 12px; padding: 24px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .card .sub { margin: 0 0 18px; color: var(--muted); font-size: 0.92rem; }
+
+  /* sign-in */
+  .signin { max-width: 440px; margin: 24px auto 0; }
+  .signin h1 { font-size: 1.6rem; margin: 0 0 6px; }
+  .signin p.lead { margin: 0 0 22px; color: var(--muted); }
+  label { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 6px; }
+  input, select, textarea {
+    width: 100%; padding: 12px; border: 1px solid #cfd5cf; border-radius: 8px; font: inherit; background: var(--white);
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--emerald); outline-offset: 1px; border-color: var(--emerald); }
+  .field { margin-bottom: 16px; }
+  .full { width: 100%; }
+  .note { font-size: 0.88rem; color: var(--muted); margin-top: 14px; }
+  .alert { border-radius: 8px; padding: 12px 14px; font-size: 0.93rem; margin-bottom: 16px; }
+  .alert-ok { background: var(--emerald-tint); color: var(--emerald-dark); }
+  .alert-err { background: #fdecea; color: var(--red); }
+
+  /* dashboard */
+  .welcome { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+  .welcome h1 { margin: 0; font-size: 1.7rem; }
+  .welcome p { margin: 2px 0 0; color: var(--muted); }
+
+  .next-visit {
+    background: var(--emerald); color: var(--white); border-radius: 12px; padding: 22px 24px;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .next-visit .label { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; font-weight: 700; }
+  .next-visit .value { font-size: 1.5rem; font-weight: 800; }
+  .next-visit .meta { font-size: 0.95rem; opacity: 0.92; }
+  .next-visit .btn { background: var(--white); color: var(--emerald-dark); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .span-2 { grid-column: span 2; }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+    .span-2 { grid-column: auto; }
+    .header-links .hide-sm { display: none; }
+  }
+
+  dl.details { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 10px 18px; font-size: 0.95rem; }
+  dl.details dt { color: var(--muted); }
+  dl.details dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+  .card-on-file { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .card-chip {
+    width: 52px; height: 36px; border-radius: 6px; background: var(--charcoal); color: var(--white);
+    display: grid; place-items: center; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; flex: none;
+  }
+  .card-on-file strong { display: block; }
+  .card-on-file span { color: var(--muted); font-size: 0.9rem; }
+
+  table.payments { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+  table.payments th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.82rem; padding: 0 8px 8px 0; border-bottom: 1px solid var(--gray-border); }
+  table.payments td { padding: 10px 8px 10px 0; border-bottom: 1px solid var(--gray-border); vertical-align: top; }
+  table.payments tr:last-child td { border-bottom: none; }
+  table.payments .amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--emerald-tint); color: var(--emerald-dark); }
+  .pill.warn { background: #fff1e0; color: #a45200; }
+  @media (max-width: 560px) {
+    table.payments .desc { display: none; }
+    table.payments td, table.payments th { padding-right: 6px; }
+  }
+  .empty { color: var(--muted); font-size: 0.93rem; margin: 0; }
+
+  .req-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .req-row { grid-template-columns: 1fr; } }
+
+  .loading { text-align: center; color: var(--muted); padding: 60px 0; }
+  footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 0 20px 40px; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="/">Lawns by Timmy 🌿</a>
+    <div class="header-links">
+      <a class="hide-sm" href="tel:+19548803500">(954) 880-3500</a>
+      <button class="btn-link" id="logoutBtn" hidden>Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="loading" id="loadingView">Loading your account…</div>
+
+  <!-- SIGN IN -->
+  <section class="signin" id="signinView" hidden>
+    <h1>Sign in to your account</h1>
+    <p class="lead">Enter the email you gave us when you signed up. We'll send you a link to sign in. No password needed.</p>
+    <div class="card">
+      <div class="alert alert-err" id="signinError" hidden></div>
+      <div class="alert alert-ok" id="signinSent" hidden></div>
+      <form id="signinForm" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
+        </div>
+        <button class="btn btn-primary full" type="submit">Email me a sign-in link</button>
+      </form>
+      <p class="note">The link works for 15 minutes. Not seeing it? Check spam, or call <a href="tel:+19548803500">(954) 880-3500</a>.</p>
+      <p class="note" id="devLink" hidden></p>
+    </div>
+    <p class="note" style="text-align:center">New here? <a href="/#quote-form">Get a quote</a></p>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashView" hidden>
+    <div class="welcome">
+      <div>
+        <h1 id="hello">Welcome back</h1>
+        <p id="helloEmail"></p>
+      </div>
+    </div>
+
+    <div class="next-visit" id="nextVisit">
+      <div>
+        <div class="label">Your service</div>
+        <div class="value" id="nextVisitValue">On your regular route day</div>
+        <div class="meta" id="nextVisitMeta"></div>
+      </div>
+      <a class="btn" href="#requests">Skip or change a visit</a>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Your property</h2>
+        <p class="sub">What our crew sees on your route sheet.</p>
+        <dl class="details" id="propertyDetails"></dl>
+        <p class="empty" id="propertyEmpty" hidden>We're still setting up your property details. Call us if anything looks off.</p>
+      </div>
+
+      <div class="card">
+        <h2>Billing</h2>
+        <p class="sub">We charge this card after each completed visit.</p>
+        <div class="card-on-file" id="cardOnFile"></div>
+        <button class="btn btn-primary" id="billingBtn">Update card &amp; view receipts</button>
+        <div class="alert alert-err" id="billingError" hidden style="margin-top:14px"></div>
+      </div>
+
+      <div class="card span-2">
+        <h2>Recent payments</h2>
+        <p class="sub">Your last 12 charges. Tap a receipt to view or print it.</p>
+        <div id="paymentsWrap"></div>
+      </div>
+
+      <div class="card span-2" id="requests">
+        <h2>Need something?</h2>
+        <p class="sub">Send a request and we'll confirm by text or email.</p>
+        <div class="alert alert-ok" id="reqOk" hidden></div>
+        <div class="alert alert-err" id="reqErr" hidden></div>
+        <form id="reqForm" novalidate>
+          <div class="req-row">
+            <div class="field">
+              <label for="reqType">What do you need?</label>
+              <select id="reqType" name="type">
+                <option value="skip_visit">Skip a visit</option>
+                <option value="extra_service">Request an extra service</option>
+                <option value="update_access">Update gate / pet / access notes</option>
+                <option value="other">Something else</option>
+              </select>
+            </div>
+            <div class="field" id="reqDateField">
+              <label for="reqDate">Which date?</label>
+              <input type="date" id="reqDate" name="date">
+            </div>
+          </div>
+          <div class="field">
+            <label for="reqMsg" id="reqMsgLabel">Anything we should know? (optional)</label>
+            <textarea id="reqMsg" name="message" rows="3" maxlength="1000"></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit">Send request</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Questions? Call <a href="tel:+19548803500">(954) 880-3500</a> or email <a href="mailto:info@lawnsbytimmy.com">info@lawnsbytimmy.com</a><br>
+  <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a>
+</footer>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const show = (id, on = true) => { $(id).hidden = !on; };
+
+  async function api(path, options = {}) {
+    const res = await fetch(path, {
+      credentials: "same-origin",
+      headers: options.body ? { "Content-Type": "application/json" } : {},
+      ...options,
+    });
+    let data = {};
+    try { data = await res.json(); } catch {}
+    return { status: res.status, ok: res.ok, data };
+  }
+
+  function text(el, value) { el.textContent = value; return el; }
+
+  // ---------- sign in ----------
+  function showSignin() {
+    show("loadingView", false); show("dashView", false); show("logoutBtn", false);
+    show("signinView");
+    if (new URLSearchParams(location.search).get("error") === "expired") {
+      text($("signinError"), "That sign-in link expired or was already replaced. Enter your email for a new one.");
+      show("signinError");
+    }
+  }
+
+  $("signinForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    show("signinError", false); show("signinSent", false);
+    const email = $("email").value.trim();
+    if (!$("email").checkValidity() || !email) {
+      text($("signinError"), "Please enter a valid email address."); show("signinError"); return;
+    }
+    const btn = e.target.querySelector("button");
+    btn.disabled = true; btn.textContent = "Sending…";
+    const { ok, data } = await api("/api/account/login", { method: "POST", body: JSON.stringify({ email }) });
+    btn.disabled = false; btn.textContent = "Email me a sign-in link";
+    if (!ok) { text($("signinError"), data.error || "Something went wrong. Please try again."); show("signinError"); return; }
+    text($("signinSent"), data.message); show("signinSent");
+    if (data.dev_login_url) {
+      $("devLink").innerHTML = "";
+      const a = document.createElement("a"); a.href = data.dev_login_url; a.textContent = "Dev sign-in link";
+      $("devLink").append(a); show("devLink");
+    }
+  });
+
+  // ---------- dashboard ----------
+  const fmtMoney = (n, cur) => new Intl.NumberFormat("en-US", { style: "currency", currency: (cur || "usd").toUpperCase() }).format(n);
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  function renderDashboard(d) {
+    const p = d.property || {};
+    const first = p.first_name || (d.name || "").split(" ")[0];
+    text($("hello"), first ? `Hi, ${first}` : "Welcome back");
+    text($("helloEmail"), d.email);
+
+    // next visit banner
+    if (p.next_service_date) {
+      const dt = new Date(p.next_service_date + (p.next_service_date.length === 10 ? "T12:00:00" : ""));
+      text($("nextVisitValue"), isNaN(dt) ? p.next_service_date
+        : dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }));
+    }
+    const metaBits = [p.frequency, p.services].filter(Boolean);
+    text($("nextVisitMeta"), metaBits.join(" · "));
+
+    // property
+    const rows = [
+      ["Address", [p.service_address, p.city, p.zip].filter(Boolean).join(", ")],
+      ["Schedule", p.frequency],
+      ["Services", p.services],
+      ["Gate / pets / access", p.access_notes],
+      ["Status", p.status],
+    ].filter(([, v]) => v);
+    const dl = $("propertyDetails"); dl.innerHTML = "";
+    rows.forEach(([k, v]) => { dl.append(text(document.createElement("dt"), k), text(document.createElement("dd"), v)); });
+    show("propertyEmpty", rows.length === 0);
+
+    // card on file
+    const c = d.card, box = $("cardOnFile"); box.innerHTML = "";
+    if (c) {
+      const chip = text(document.createElement("div"), c.brand === "american_express" ? "Amex" : c.brand); chip.className = "card-chip";
+      const info = document.createElement("div");
+      info.append(text(document.createElement("strong"), `•••• ${c.last4}`),
+                  text(document.createElement("span"), `Expires ${String(c.exp_month).padStart(2, "0")}/${String(c.exp_year).slice(-2)}`));
+      const now = new Date(), expired = c.exp_year < now.getFullYear() || (c.exp_year === now.getFullYear() && c.exp_month < now.getMonth() + 1);
+      if (expired) { const pill = text(document.createElement("span"), "Expired, please update"); pill.className = "pill warn"; pill.style.marginLeft = "6px"; info.querySelector("span").after(pill); }
+      box.append(chip, info);
+    } else {
+      const p2 = text(document.createElement("p"), "No card on file yet. Add one so we can bill after each visit."); p2.className = "empty"; box.append(p2);
+    }
+
+    // payments
+    const wrap = $("paymentsWrap"); wrap.innerHTML = "";
+    if (!d.payments || !d.payments.length) {
+      const e = text(document.createElement("p"), "No payments yet. They'll show up here after your first visit."); e.className = "empty"; wrap.append(e);
+    } else {
+      const t = document.createElement("table"); t.className = "payments";
+      t.innerHTML = '<thead><tr><th>Date</th><th class="desc">Description</th><th>Status</th><th class="amt">Amount</th><th></th></tr></thead>';
+      const tb = document.createElement("tbody");
+      d.payments.forEach((pay) => {
+        const tr = document.createElement("tr");
+        const status = document.createElement("span");
+        status.className = "pill" + (pay.status === "succeeded" ? "" : " warn");
+        text(status, pay.status === "succeeded" ? "Paid" : pay.status.charAt(0).toUpperCase() + pay.status.slice(1));
+        const tdStatus = document.createElement("td"); tdStatus.append(status);
+        const tdRcpt = document.createElement("td");
+        if (pay.receipt_url) { const a = text(document.createElement("a"), "Receipt"); a.href = pay.receipt_url; a.target = "_blank"; a.rel = "noopener"; tdRcpt.append(a); }
+        const amt = text(document.createElement("td"), fmtMoney(pay.amount, pay.currency)); amt.className = "amt";
+        const tdDesc = text(document.createElement("td"), pay.description); tdDesc.className = "desc";
+        const tdDate = text(document.createElement("td"), fmtDate(pay.date)); tdDate.style.whiteSpace = "nowrap";
+        tr.append(tdDate, tdDesc, tdStatus, amt, tdRcpt);
+        tb.append(tr);
+      });
+      t.append(tb); wrap.append(t);
+    }
+
+    show("loadingView", false); show("signinView", false);
+    show("dashView"); show("logoutBtn");
+    history.replaceState(null, "", "/account/");
+  }
+
+  $("billingBtn").addEventListener("click", async (e) => {
+    show("billingError", false);
+    e.target.disabled = true; e.target.textContent = "Opening…";
+    const { ok, status, data } = await api("/api/account/billing", { method: "POST", body: "{}" });
+    if (ok && data.url) { location.href = data.url; return; }
+    if (status === 401) return showSignin();
+    e.target.disabled = false; e.target.innerHTML = "Update card &amp; view receipts";
+    text($("billingError"), data.error || "Couldn't open billing."); show("billingError");
+  });
+
+  // requests form
+  function syncReqForm() {
+    const type = $("reqType").value;
+    show("reqDateField", type === "skip_visit" || type === "extra_service");
+    text($("reqDate").previousElementSibling, type === "extra_service" ? "Preferred date (optional)" : "Which date?");
+    text($("reqMsgLabel"), type === "skip_visit" ? "Anything we should know? (optional)" : "Tell us what you need");
+  }
+  $("reqType").addEventListener("change", syncReqForm);
+  syncReqForm();
+  const tomorrow = new Date(Date.now() + 864e5); $("reqDate").min = tomorrow.toISOString().slice(0, 10);
+
+  $("reqForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    show("reqOk", false); show("reqErr", false);
+    const btn = e.target.querySelector("button");
+    btn.disabled = true; btn.textContent = "Sending…";
+    const body = { type: $("reqType").value, date: $("reqDateField").hidden ? "" : $("reqDate").value, message: $("reqMsg").value };
+    const { ok, status, data } = await api("/api/account/request", { method: "POST", body: JSON.stringify(body) });
+    btn.disabled = false; btn.textContent = "Send request";
+    if (status === 401) return showSignin();
+    if (!ok) { text($("reqErr"), data.error || "That didn't go through."); show("reqErr"); return; }
+    text($("reqOk"), data.message); show("reqOk"); e.target.reset(); syncReqForm();
+  });
+
+  $("logoutBtn").addEventListener("click", async () => {
+    await api("/api/account/logout", { method: "POST", body: "{}" });
+    showSignin();
+  });
+
+  // ---------- boot ----------
+  (async () => {
+    const { ok, data } = await api("/api/account/me");
+    if (ok && data.signed_in) renderDashboard(data);
+    else showSignin();
+  })();
+</script>
+</body>
+</html>

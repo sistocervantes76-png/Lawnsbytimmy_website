@@ -109,6 +109,16 @@
 
   .header-cta { white-space: nowrap; }
 
+  .header-account {
+    margin-left: auto;
+    color: var(--charcoal);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .header-account:hover { color: var(--emerald); }
+
   /* ---------- Hero ---------- */
   .hero {
     background: linear-gradient(180deg, #EAF3EA 0%, var(--white) 100%);
@@ -437,6 +447,13 @@
   @media (max-width: 640px) {
     nav.main-nav { display: none; }
   }
+  @media (max-width: 480px) {
+    .header-inner { padding: 12px 14px; gap: 10px; }
+    .logo { font-size: 1.05rem; }
+    .header-account { font-size: 0.85rem; }
+    .header-cta { padding: 9px 12px; font-size: 0.82rem; }
+    .header-cta .long { display: none; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -465,7 +482,8 @@
       <a href="#how-it-works">How It Works</a>
       <a href="#faqs">FAQs</a>
     </nav>
-    <a class="btn btn-primary header-cta" href="tel:+19548803500">Call (954) 880-3500</a>
+    <a class="header-account" href="/account/">My Account</a>
+    <a class="btn btn-primary header-cta" href="tel:+19548803500">Call<span class="long"> (954) 880-3500</span></a>
   </div>
 </header>
 
@@ -752,7 +770,8 @@
         <p>
           <a href="#services">Services</a><br>
           <a href="#how-it-works">How It Works</a><br>
-          <a href="#faqs">FAQs</a>
+          <a href="#faqs">FAQs</a><br>
+          <a href="/account/">My Account</a>
         </p>
       </div>
       <div class="links">

@@ -12,6 +12,10 @@ It is one self-contained file — `index.html` — with all the design (CSS) and
 
 The "Get My Instant Quote" form is fully wired up to Timmy's Make.com automation. Every submission is sent there instantly. See `docs/webhook-setup.md` if you ever need to change where it points (e.g. you rebuild the Make scenario and get a new address).
 
+## Customer accounts (lawnsbytimmy.com/account)
+
+Customers can sign in with just their email to see their service details, card on file, payment receipts, and send requests (skip a visit, extra service, etc.). The behind-the-scenes code lives in `functions/` and runs on Cloudflare Pages automatically. **One-time setup is required:** see `docs/customer-dashboard-setup.md`.
+
 ## Previewing the site on your own computer
 
 You don't need to install anything. Just double-click `index.html` and it will open in your web browser. That's the whole site, exactly as a visitor would see it.
