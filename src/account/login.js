@@ -9,7 +9,7 @@ import {
   findStripeCustomer,
   sendToMake,
   LOGIN_LINK_MINUTES,
-} from "../../_lib/account.js";
+} from "./lib.js";
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "Bad origin" }, 403);

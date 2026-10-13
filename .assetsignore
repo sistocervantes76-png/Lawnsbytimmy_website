@@ -1,0 +1,12 @@
+# Files that should NOT be published as part of the public website
+.git
+.github
+.gitignore
+.assetsignore
+.dev.vars
+.wrangler
+node_modules
+src
+docs
+README.md
+wrangler.jsonc

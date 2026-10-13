@@ -14,7 +14,7 @@ The "Get My Instant Quote" form is fully wired up to Timmy's Make.com automation
 
 ## Customer accounts (lawnsbytimmy.com/account)
 
-Customers can sign in with just their email to see their service details, card on file, payment receipts, and send requests (skip a visit, extra service, etc.). The behind-the-scenes code lives in `functions/` and runs on Cloudflare Pages automatically. **One-time setup is required:** see `docs/customer-dashboard-setup.md`.
+Customers can sign in with just their email to see their service details, card on file, payment receipts, and send requests (skip a visit, extra service, etc.). The behind-the-scenes code lives in `src/` and runs as the `lawnsbytimmy-website` Cloudflare Worker (configured in `wrangler.jsonc`); the rest of the site is served exactly as before. **One-time setup is required:** see `docs/customer-dashboard-setup.md`.
 
 ## Previewing the site on your own computer
 

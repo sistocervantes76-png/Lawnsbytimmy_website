@@ -17,7 +17,7 @@ Only customers who already exist in **Stripe** with that email can sign in.
 | Piece | Where it lives | What it does |
 |---|---|---|
 | `account/index.html` | Your site | The sign-in and dashboard page customers see |
-| `functions/api/account/*` | Cloudflare (runs automatically with your site) | Checks the customer in Stripe, sends the sign-in link, loads their info, opens the billing page |
+| `src/` + `wrangler.jsonc` | Cloudflare Worker `lawnsbytimmy-website` (deploys automatically from GitHub) | Checks the customer in Stripe, sends the sign-in link, loads their info, opens the billing page |
 | Stripe | Your Stripe account | Card on file, payments, receipts, billing page |
 | Make.com webhook | A new Make scenario | Emails the sign-in link, looks up the CRM row, logs requests |
 
@@ -82,7 +82,7 @@ Create **one** new scenario: **Webhooks → Custom webhook**. Name it "Lawns by 
 
 ## Step 4: Add the settings in Cloudflare
 
-Cloudflare dashboard → **Workers & Pages** → your lawnsbytimmy site → **Settings** → **Variables and Secrets** → add these for **Production**. Choose **Encrypt** for the first two.
+Cloudflare dashboard → **Workers & Pages** → **lawnsbytimmy-website** → **Settings** → **Variables and Secrets** → **Add**. Pick type **Secret** for all three. That keeps them hidden, and they survive every deploy.
 
 | Name | Value |
 |---|---|
@@ -90,7 +90,7 @@ Cloudflare dashboard → **Workers & Pages** → your lawnsbytimmy site → **Se
 | `SESSION_SECRET` | A long random string, at least 32 characters. Generate one at any password generator and **never share it**. |
 | `ACCOUNT_WEBHOOK_URL` | The Make webhook URL from Step 3 |
 
-Then redeploy (merging the pull request does this automatically).
+Merging the pull request redeploys the site automatically. If you add the secrets after merging, they take effect right away.
 
 ## Step 5: Test it
 
@@ -106,4 +106,4 @@ Then redeploy (merging the pull request does this automatically).
 - **Security:** card numbers never touch your site. Customers only see the last 4 digits, and card changes happen on Stripe's own page. Each customer can only see their own account.
 - **Changing `SESSION_SECRET`** signs everyone out (handy if you ever need to).
 - **Optional:** in Cloudflare → Security → WAF → Rate limiting rules, limit `/api/account/login` to about 5 requests per minute per IP to stop spam sign-in emails.
-- **Testing on your own computer:** copy the Step 4 values into a `.dev.vars` file (it's git-ignored) and run `npx wrangler pages dev .`. Add `DEV_SHOW_LOGIN_LINK=true` to show the sign-in link on screen instead of emailing it. **Never set that in Cloudflare.**
+- **Testing on your own computer:** copy the Step 4 values into a `.dev.vars` file (it's git-ignored) and run `npx wrangler dev`. Add `DEV_SHOW_LOGIN_LINK=true` to show the sign-in link on screen instead of emailing it. **Never set that in Cloudflare.**

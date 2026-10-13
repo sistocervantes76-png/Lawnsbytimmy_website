@@ -1,7 +1,7 @@
 // POST /api/account/request  { type, date?, message? }
 // Sends a customer request (skip a visit, extra service, update access notes, other)
 // to the Make.com scenario, which logs it to the CRM and notifies Timmy.
-import { json, getSession, sameOrigin, sendToMake } from "../../_lib/account.js";
+import { json, getSession, sameOrigin, sendToMake } from "./lib.js";
 
 const TYPES = {
   skip_visit: "Skip a visit",

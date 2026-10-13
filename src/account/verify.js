@@ -1,6 +1,6 @@
 // GET /api/account/verify?t=...  — the link in the sign-in email.
 // Swaps a valid login link for a 30-day session cookie, then opens the dashboard.
-import { verifyToken, signToken, sessionCookie, SESSION_DAYS } from "../../_lib/account.js";
+import { verifyToken, signToken, sessionCookie, SESSION_DAYS } from "./lib.js";
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);

@@ -1,7 +1,7 @@
 // GET /api/account/me — everything the dashboard shows for the signed-in customer.
 // Card + payments come from Stripe. Property and schedule details come from the
 // CRM sheet through the Make.com scenario (optional; the page works without it).
-import { json, getSession, stripe, sendToMake } from "../../_lib/account.js";
+import { json, getSession, stripe, sendToMake } from "./lib.js";
 
 function cardSummary(pm) {
   if (!pm || !pm.card) return null;

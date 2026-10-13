@@ -1,6 +1,6 @@
 // POST /api/account/billing — opens Stripe's secure billing page for this customer
 // (update card, view and download receipts). No second login needed.
-import { json, getSession, sameOrigin, stripe } from "../../_lib/account.js";
+import { json, getSession, sameOrigin, stripe } from "./lib.js";
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "Bad origin" }, 403);
