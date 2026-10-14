@@ -264,8 +264,11 @@
   function showSignin() {
     show("loadingView", false); show("dashView", false); show("logoutBtn", false);
     show("signinView");
-    if (new URLSearchParams(location.search).get("error") === "expired") {
-      text($("signinError"), "That sign-in link expired or was already replaced. Enter your email for a new one.");
+    const linkError = new URLSearchParams(location.search).get("error");
+    if (linkError === "expired" || linkError === "used") {
+      text($("signinError"), linkError === "used"
+        ? "That sign-in link was already used. Each link works once. Enter your email for a new one."
+        : "That sign-in link expired. Enter your email for a new one.");
       show("signinError");
     }
   }
