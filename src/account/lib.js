@@ -1,5 +1,5 @@
 // Shared helpers for the customer account area (/account).
-// Files in this _lib folder are imported by the API routes; they are not routes themselves.
+// This file is imported by the API routes; it is not a route itself.
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -7,6 +7,35 @@ const dec = new TextDecoder();
 export const SESSION_COOKIE = "lbt_session";
 export const LOGIN_LINK_MINUTES = 15;
 export const SESSION_DAYS = 30;
+export const PHONE = "(954) 880-3500";
+
+// ---------- rate limiting + one-time links ----------
+// Both are switched on by bindings in wrangler.jsonc. If a binding is missing
+// the site still works, just without that protection.
+
+// The visitor's IP address, as reported by Cloudflare.
+export function clientIp(request) {
+  return request.headers.get("CF-Connecting-IP") || "unknown";
+}
+
+// True when `key` has gone over the limit set on this rate-limit binding.
+// Never blocks a real customer because of a Cloudflare hiccup: errors count as "not limited".
+export async function overLimit(limiter, key) {
+  if (!limiter) return false;
+  try {
+    const { success } = await limiter.limit({ key });
+    return !success;
+  } catch (err) {
+    console.error("rate limiter error", err);
+    return false;
+  }
+}
+
+// The KV store that remembers which sign-in links were already used
+// (and which emails were just sent a link). Null when not set up yet.
+export function linkStore(env) {
+  return env.LOGIN_LINKS || null;
+}
 
 // ---------- small utils ----------
 

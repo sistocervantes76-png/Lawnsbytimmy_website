@@ -10,5 +10,19 @@
   },
   // Keep the variables/secrets set in the Cloudflare dashboard on every deploy.
   "keep_vars": true,
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+
+  // Stops sign-in email spam (see src/account/login.js).
+  // namespace_id is just a number unique to this Cloudflare account. Leave as is.
+  "ratelimits": [
+    { "name": "LOGIN_IP_LIMITER", "namespace_id": "2601", "simple": { "limit": 5, "period": 60 } },
+    { "name": "LOGIN_EMAIL_LIMITER", "namespace_id": "2602", "simple": { "limit": 2, "period": 60 } }
+  ]
+
+  // One-time sign-in links. Turn on after creating the KV store
+  // (docs/customer-dashboard-setup.md, Step 4b): remove the // in front of the
+  // three lines below, paste the ID, and add a comma after the "ratelimits" ] above.
+  // "kv_namespaces": [
+  //   { "binding": "LOGIN_LINKS", "id": "PASTE_KV_NAMESPACE_ID_HERE" }
+  // ]
 }

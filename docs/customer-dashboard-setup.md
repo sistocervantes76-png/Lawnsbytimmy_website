@@ -92,18 +92,39 @@ Cloudflare dashboard → **Workers & Pages** → **lawnsbytimmy-website** → **
 
 Merging the pull request redeploys the site automatically. If you add the secrets after merging, they take effect right away.
 
+## Step 4b: Make sign-in links one-time-use
+
+Without this step sign-in still works, but a link can be reused for its full 15 minutes (for example, if a customer forwards the email).
+
+1. Cloudflare dashboard → **Storage & Databases** → **Workers KV** → **Create instance**. Name it `lawnsbytimmy-login-links`.
+2. Copy its **ID** (a long string of letters and numbers).
+3. In `wrangler.jsonc`, turn on the `kv_namespaces` block at the bottom and paste the ID there (the file says exactly what to change). Commit to `main` and it redeploys.
+
+Spam protection on the sign-in form is already built in and needs no setup: 5 tries a minute per visitor, and at most 2 sign-in emails a minute per address (1 a minute once Step 4b is done).
+
+## Step 4c: Point lawnsbytimmy.com at the Worker
+
+The site has to be served by the **lawnsbytimmy-website** Worker, or `/account` and the sign-in code won't exist on the live site.
+
+1. Cloudflare dashboard → **Workers & Pages**. If an older **Pages** project has `lawnsbytimmy.com` attached, open it → **Custom domains** → remove `lawnsbytimmy.com` (and `www.lawnsbytimmy.com` if listed). Don't delete the project yet, so you can switch back if needed.
+2. Open the **lawnsbytimmy-website** Worker → **Settings** → **Domains & Routes** → **Add** → **Custom domain** → `lawnsbytimmy.com`. Repeat for `www.lawnsbytimmy.com` if you use it.
+3. Same Worker → **Settings** → **Build**: make sure it is connected to this GitHub repo on the `main` branch, so every merge deploys.
+4. Check: the homepage header shows **My Account**, and `lawnsbytimmy.com/account/` loads the sign-in page.
+
 ## Step 5: Test it
 
 1. Make sure your own email is a customer in Stripe.
-2. Go to `lawnsbytimmy.com/account`, enter your email, and click the link in the email.
+2. Go to `lawnsbytimmy.com/account`, enter your email, open the link in the email, and tap **Open my account**.
 3. Check that you see your card, payments, and property info. Tap **Update card & view receipts**, and send a test request.
+4. If you did Step 4b, open the same email link again and tap the button: it should say the link was already used.
 
 ---
 
 ## Good to know
 
-- **Sign-in links** expire after 15 minutes. Customers stay signed in for 30 days on that device.
+- **Sign-in links** expire after 15 minutes and (with Step 4b) work once. Customers stay signed in for 30 days on that device.
+- **Why the extra "Open my account" button:** email security scanners open links before the customer does. The button means a scanner can't use up the one-time link.
+- **Signing out** clears the cookie on that device only. To sign *everyone* out (say, a customer's phone is stolen), change `SESSION_SECRET`.
 - **Security:** card numbers never touch your site. Customers only see the last 4 digits, and card changes happen on Stripe's own page. Each customer can only see their own account.
 - **Changing `SESSION_SECRET`** signs everyone out (handy if you ever need to).
-- **Optional:** in Cloudflare → Security → WAF → Rate limiting rules, limit `/api/account/login` to about 5 requests per minute per IP to stop spam sign-in emails.
 - **Testing on your own computer:** copy the Step 4 values into a `.dev.vars` file (it's git-ignored) and run `npx wrangler dev`. Add `DEV_SHOW_LOGIN_LINK=true` to show the sign-in link on screen instead of emailing it. **Never set that in Cloudflare.**
