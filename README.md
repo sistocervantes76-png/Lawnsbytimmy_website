@@ -38,3 +38,10 @@ Any of these will work. All three are free to start and let you point your `lawn
 ## Making changes later
 
 Everything you'd want to edit — headline text, phone number, colors, FAQ answers — is inside `index.html`. Open it in any text editor, make your change, save, and re-publish using whichever method above you chose.
+
+## Where this site is hosted
+
+- **Live site:** Cloudflare. The domain (lawnsbytimmy.com) and its DNS are on Cloudflare, and the site runs as the `lawnsbytimmy-website` Cloudflare Worker.
+- **Code:** this GitHub repo.
+- **Not used: Vercel.** An old Vercel project called `lawns-by-timmy` (started in Vercel's v0 builder on Sep 13, 2026) also had lawnsbytimmy.com and www.lawnsbytimmy.com attached. Because the domain points to Cloudflare, Vercel kept sending "2 domains need configuration" emails. That Vercel project was deleted on Oct 18, 2026.
+- If Vercel emails like that ever show up again, they are not about the live site. Don't add the domain back in Vercel.
