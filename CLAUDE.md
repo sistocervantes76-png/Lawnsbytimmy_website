@@ -10,7 +10,7 @@ Marketing site for lawnsbytimmy.com (lawn care, Oakland Park / Fort Lauderdale F
 
 - Preview the static site: open `index.html` in a browser (no server needed).
 - Run the full site including the account API locally: `npx wrangler dev`. Secrets go in a git-ignored `.dev.vars` (`STRIPE_SECRET_KEY`, `SESSION_SECRET` ≥32 chars, `ACCOUNT_WEBHOOK_URL`). Add `DEV_SHOW_LOGIN_LINK=true` there to get the sign-in link in the API response instead of an email; never set it in Cloudflare.
-- Deploy: merging to `main` auto-deploys the `lawnsbytimmy-website` Cloudflare Worker (Cloudflare's Git build integration). There is no CI in this repo. Vercel is not used.
+- Deploy: merging to `main` auto-deploys the `lawnsbytimmy-website` Cloudflare Worker (Cloudflare's Git build integration). There are no GitHub Actions; the only PR check is "Workers Builds", which also posts a preview URL for each branch. Vercel is not used.
 
 ## Architecture
 
