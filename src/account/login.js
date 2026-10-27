@@ -1,26 +1,35 @@
-// POST /api/account/login  { email }
-// Emails a one-time sign-in link to customers who have a Stripe account.
+// POST /api/account/login  { phone }
+// Texts a 6-digit sign-in code to customers whose phone number is in the CRM.
 // Always answers the same way so nobody can use it to check who is a customer.
 //
-// Spam protection (so nobody can flood customers' inboxes from info@):
-//  - each visitor (IP address) gets 5 tries a minute         -> LOGIN_IP_LIMITER
-//  - each email address gets at most 2 link requests a minute -> LOGIN_EMAIL_LIMITER
-//  - with the LOGIN_LINKS store set up, one email per address per minute, period
+// Spam protection (so nobody can run up texts from (954) 880-3500):
+//  - each visitor (IP address) gets 5 tries a minute          -> LOGIN_IP_LIMITER
+//  - each phone number gets at most 2 code requests a minute  -> LOGIN_EMAIL_LIMITER
+//  - with the LOGIN_LINKS store set up, one text per number per minute, period
 import {
   json,
-  normalizeEmail,
+  normalizePhone,
   sameOrigin,
   signToken,
-  findStripeCustomer,
+  hmac,
+  cookie,
+  readCrm,
+  findCustomers,
   sendToMake,
   clientIp,
   overLimit,
   linkStore,
-  LOGIN_LINK_MINUTES,
+  CODE_COOKIE,
+  CODE_MINUTES,
   PHONE,
 } from "./lib.js";
 
-const EMAIL_COOLDOWN_SECONDS = 60; // KV's shortest allowed expiry
+const PHONE_COOLDOWN_SECONDS = 60; // KV's shortest allowed expiry
+
+function sixDigits() {
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+  return String(n).padStart(6, "0");
+}
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "Bad origin" }, 403);
@@ -35,53 +44,50 @@ export async function onRequestPost({ request, env }) {
   } catch {
     return json({ error: "Send JSON" }, 400);
   }
-  const email = normalizeEmail(body.email);
-  if (!email) return json({ error: "Please enter a valid email address." }, 400);
+  const phone = normalizePhone(body.phone);
+  if (!phone) return json({ error: "Please enter your 10-digit cell number." }, 400);
 
-  const genericReply = json({
-    ok: true,
-    message: "If that email is on a Lawns by Timmy account, a sign-in link is on its way.",
-  });
-
-  // Same friendly answer when an address is being hammered: the real customer
-  // already has a fresh link in their inbox, and an attacker learns nothing.
-  if (await overLimit(env.LOGIN_EMAIL_LIMITER, `email:${email}`)) return genericReply;
-  const store = linkStore(env);
-  if (store && (await store.get(`cooldown:${email}`))) return genericReply;
-
-  try {
-    const customer = await findStripeCustomer(env, email);
-    if (!customer) return genericReply;
-
+  const reply = async (cid, code) => {
+    // Every answer sets a challenge cookie, real or not, so the reply looks the same either way.
+    const n = crypto.randomUUID();
     const token = await signToken(
       {
-        p: "login",
-        email,
-        cid: customer.id,
-        n: crypto.randomUUID(), // lets the link be used only once
-        exp: Date.now() + LOGIN_LINK_MINUTES * 60 * 1000,
+        p: "code",
+        phone,
+        cid: cid || "",
+        n,
+        h: await hmac(env.SESSION_SECRET, `${n}:${code || crypto.randomUUID()}`),
+        exp: Date.now() + CODE_MINUTES * 60 * 1000,
       },
       env.SESSION_SECRET
     );
-    const origin = new URL(request.url).origin;
-    const loginUrl = `${origin}/api/account/verify?t=${encodeURIComponent(token)}`;
+    return json(
+      { ok: true, message: `If that number is on a Lawns by Timmy account, we just texted it a 6-digit code.` },
+      200,
+      { "Set-Cookie": cookie(CODE_COOKIE, token, CODE_MINUTES * 60, "/api/account/") }
+    );
+  };
 
-    await sendToMake(env, "account_login_link", {
-      email,
-      first_name: (customer.name || "").split(" ")[0] || "",
-      login_url: loginUrl,
-      expires_minutes: LOGIN_LINK_MINUTES,
+  try {
+    if (await overLimit(env.LOGIN_EMAIL_LIMITER, `phone:${phone}`)) return reply();
+    const store = linkStore(env);
+    if (store && (await store.get(`cooldown:${phone}`))) return reply();
+
+    const crm = await readCrm(env);
+    const [customer] = findCustomers(crm, (c) => normalizePhone(c.Phone) === phone);
+    if (!customer) return reply();
+
+    const code = sixDigits();
+    await sendToMake(env, "send_code", {
+      phone: `+1${phone}`,
+      code,
+      first_name: customer.First_Name || "",
+      customer_id: customer.Customer_ID,
     });
-
-    if (store) await store.put(`cooldown:${email}`, "1", { expirationTtl: EMAIL_COOLDOWN_SECONDS });
-
-    // Local testing only: lets you sign in without an email being sent.
-    if (env.DEV_SHOW_LOGIN_LINK === "true") {
-      return json({ ok: true, message: "Dev mode: use the link below.", dev_login_url: loginUrl });
-    }
-    return genericReply;
+    if (store) await store.put(`cooldown:${phone}`, "1", { expirationTtl: PHONE_COOLDOWN_SECONDS });
+    return reply(customer.Customer_ID, code);
   } catch (err) {
     console.error("login error", err);
-    return json({ error: `We couldn't send a sign-in link right now. Please call ${PHONE}.` }, 500);
+    return json({ error: `We couldn't text a code right now. Please call ${PHONE}.` }, 500);
   }
 }

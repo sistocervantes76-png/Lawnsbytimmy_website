@@ -14,7 +14,7 @@ The "Get My Instant Quote" form is fully wired up to Timmy's Make.com automation
 
 ## Customer accounts (lawnsbytimmy.com/account)
 
-Customers can sign in with just their email to see their service details, card on file, payment receipts, and send requests (skip a visit, extra service, etc.). The behind-the-scenes code lives in `src/` and runs as the `lawnsbytimmy-website` Cloudflare Worker (configured in `wrangler.jsonc`); the rest of the site is served exactly as before. **One-time setup is required:** see `docs/customer-dashboard-setup.md`.
+Customers sign in with their cell number and a 6-digit code texted from (954) 880-3500. They see their next visit, property details, balance, bills, recent visits, and can send requests (skip a visit, extra service, etc.). Everything comes from the "Lawns By Timmy CRM" sheet through the Make scenario `LBT_Customer_Account`. The behind-the-scenes code lives in `src/` and runs as the `lawnsbytimmy-website` Cloudflare Worker (configured in `wrangler.jsonc`). **Setup and secrets:** see `docs/customer-dashboard-setup.md`.
 
 ## Previewing the site on your own computer
 

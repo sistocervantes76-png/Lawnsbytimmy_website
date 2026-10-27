@@ -1,77 +1,73 @@
 // GET /api/account/me — everything the dashboard shows for the signed-in customer.
-// Card + payments come from Stripe. Property and schedule details come from the
-// CRM sheet through the Make.com scenario (optional; the page works without it).
-import { json, getSession, stripe, sendToMake } from "./lib.js";
+// It all comes from the CRM sheet (Customers, Invoices and Jobs tabs), read through Make.com.
+import { json, getSession, readCrm, findCustomers, normalizePhone, PHONE } from "./lib.js";
 
-function cardSummary(pm) {
-  if (!pm || !pm.card) return null;
-  return {
-    brand: pm.card.brand,
-    last4: pm.card.last4,
-    exp_month: pm.card.exp_month,
-    exp_year: pm.card.exp_year,
-  };
+const money = (v) => {
+  const n = parseFloat(String(v || "").replace(/[^0-9.\-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+};
+
+// "10/28/2026" -> "2026-10-28"; anything else -> "".
+function isoDate(v) {
+  const m = String(v || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : "";
 }
+
+const newestFirst = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
 export async function onRequestGet({ request, env }) {
   const session = await getSession(request, env);
   if (!session) return json({ signed_in: false }, 401);
 
   try {
-    const customer = await stripe(env, "GET", `/v1/customers/${session.cid}`, {
-      "expand[]": "invoice_settings.default_payment_method",
-    });
-    if (customer.deleted) return json({ signed_in: false }, 401);
+    const crm = await readCrm(env);
+    // The phone must still match, so changing a number in the CRM locks out the old phone.
+    const [c] = findCustomers(
+      crm,
+      (row) => row.Customer_ID === session.cid && normalizePhone(row.Phone) === session.phone
+    );
+    if (!c) return json({ signed_in: false }, 401);
 
-    let card = cardSummary(customer.invoice_settings?.default_payment_method);
-    if (!card) {
-      const pms = await stripe(env, "GET", `/v1/customers/${session.cid}/payment_methods`, { type: "card", limit: 1 });
-      card = cardSummary(pms.data?.[0]);
-    }
+    const bills = crm.invoices
+      .filter((i) => i.Customer_ID === c.Customer_ID && i.Invoice_ID)
+      .map((i) => ({
+        date: isoDate(i.Invoice_Date),
+        description: i.Description || "Lawn service",
+        amount: money(i.Amount),
+        balance: money(i.Balance),
+        paid: /paid/i.test(i.Status) || money(i.Balance) === 0,
+      }))
+      .sort(newestFirst);
 
-    const charges = await stripe(env, "GET", "/v1/charges", { customer: session.cid, limit: 12 });
-    const payments = (charges.data || []).map((c) => ({
-      date: new Date(c.created * 1000).toISOString(),
-      amount: c.amount / 100,
-      currency: c.currency,
-      status: c.refunded ? "refunded" : c.status,
-      description: c.description || "Lawn service",
-      receipt_url: c.receipt_url || null,
-    }));
+    const visits = crm.jobs
+      .filter((j) => j.Customer_ID === c.Customer_ID && /completed/i.test(j.Job_Status))
+      .map((j) => ({ date: isoDate(j.Completed_At || j.Service_Date), service: j.Service_Type || "Lawn service" }))
+      .filter((v) => v.date)
+      .sort(newestFirst);
 
-    let property = null;
-    try {
-      const crm = await sendToMake(
-        env,
-        "account_lookup",
-        { email: session.email, stripe_customer_id: session.cid },
-        { expectResponse: true }
-      );
-      if (crm && typeof crm === "object") {
-        const pick = (k) => (crm[k] === undefined || crm[k] === null ? "" : String(crm[k]));
-        property = {
-          first_name: pick("first_name"),
-          service_address: pick("service_address"),
-          city: pick("city"),
-          zip: pick("zip"),
-          frequency: pick("frequency"),
-          services: pick("services"),
-          access_notes: pick("access_notes"),
-          status: pick("status"),
-          next_service_date: pick("next_service_date"),
-        };
-      }
-    } catch (err) {
-      console.error("CRM lookup failed", err); // dashboard still loads with Stripe data
-    }
+    const payMethods = ["Cash", "Apple Pay"];
+    if (/zelle/i.test(c.Payment_Method || "")) payMethods.push("Zelle");
 
     return json({
       signed_in: true,
-      email: session.email,
-      name: customer.name || property?.first_name || "",
-      card,
-      payments,
-      property,
+      name: [c.First_Name, c.Last_Name].filter(Boolean).join(" "),
+      first_name: c.First_Name || "",
+      phone: session.phone,
+      property: {
+        service_address: c.Service_Address || "",
+        city: String(c.City || "").replace(/,?\s*Florida$/i, ""),
+        zip: c.Zip || "",
+        frequency: c.Frequency || "",
+        services: c.Services || "",
+        access_notes: /needs confirmation/i.test(c.Access_Notes || "") ? "" : c.Access_Notes || "",
+        service_day: c.Service_Day || "",
+      },
+      next_service_date: isoDate(c.Next_Service_Date),
+      balance: bills.reduce((s, b) => s + (b.paid ? 0 : b.balance), 0),
+      bills: bills.slice(0, 12),
+      visits: visits.slice(0, 6),
+      pay_methods: payMethods,
+      business_phone: PHONE,
     });
   } catch (err) {
     console.error("me error", err);

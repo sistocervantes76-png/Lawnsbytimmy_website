@@ -5,11 +5,12 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 export const SESSION_COOKIE = "lbt_session";
-export const LOGIN_LINK_MINUTES = 15;
+export const CODE_COOKIE = "lbt_code";
+export const CODE_MINUTES = 10;
 export const SESSION_DAYS = 30;
 export const PHONE = "(954) 880-3500";
 
-// ---------- rate limiting + one-time links ----------
+// ---------- rate limiting + one-time codes ----------
 // Both are switched on by bindings in wrangler.jsonc. If a binding is missing
 // the site still works, just without that protection.
 
@@ -31,8 +32,8 @@ export async function overLimit(limiter, key) {
   }
 }
 
-// The KV store that remembers which sign-in links were already used
-// (and which emails were just sent a link). Null when not set up yet.
+// The KV store that remembers which codes were already used (and which phones
+// were just texted). Null when not set up yet.
 export function linkStore(env) {
   return env.LOGIN_LINKS || null;
 }
@@ -46,9 +47,11 @@ export function json(data, status = 200, headers = {}) {
   });
 }
 
-export function normalizeEmail(value) {
-  const email = String(value || "").trim().toLowerCase();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254 ? email : null;
+// "(954) 557-3800", "954.557.3800", "+1 954 557 3800" -> "9545573800". Null if not a US number.
+export function normalizePhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  const ten = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  return /^[2-9]\d{9}$/.test(ten) ? ten : null;
 }
 
 function b64urlEncode(bytes) {
@@ -62,7 +65,7 @@ function b64urlDecode(str) {
   return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
 
-// ---------- signed tokens (login links + session cookie) ----------
+// ---------- signed tokens (code challenge + session cookie) ----------
 // A token is base64url(payload).base64url(HMAC-SHA256(payload)). It can't be
 // forged without SESSION_SECRET, so no database is needed.
 
@@ -76,10 +79,14 @@ async function hmacKey(secret) {
   ]);
 }
 
+export async function hmac(secret, text) {
+  const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret), enc.encode(text));
+  return b64urlEncode(new Uint8Array(sig));
+}
+
 export async function signToken(payload, secret) {
   const body = b64urlEncode(enc.encode(JSON.stringify(payload)));
-  const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret), enc.encode(body));
-  return `${body}.${b64urlEncode(new Uint8Array(sig))}`;
+  return `${body}.${await hmac(secret, body)}`;
 }
 
 export async function verifyToken(token, secret, purpose) {
@@ -97,6 +104,15 @@ export async function verifyToken(token, secret, purpose) {
   }
 }
 
+// Compares two strings without leaking where they differ.
+export function sameString(a, b) {
+  a = String(a);
+  b = String(b);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
 export function getCookie(request, name) {
   const header = request.headers.get("Cookie") || "";
   for (const part of header.split(";")) {
@@ -106,13 +122,19 @@ export function getCookie(request, name) {
   return null;
 }
 
-export function sessionCookie(token, maxAgeSeconds) {
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+export function cookie(name, token, maxAgeSeconds, path = "/") {
+  return `${name}=${token}; Path=${path}; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
 }
 
+export function sessionCookie(token, maxAgeSeconds) {
+  return cookie(SESSION_COOKIE, token, maxAgeSeconds);
+}
+
+// Sessions from the old Stripe email sign-in carry a Stripe id; they no longer count.
 export async function getSession(request, env) {
   const token = getCookie(request, SESSION_COOKIE);
-  return token ? verifyToken(token, env.SESSION_SECRET, "session") : null;
+  const session = token ? await verifyToken(token, env.SESSION_SECRET, "session") : null;
+  return session && /^LC-/.test(session.cid || "") ? session : null;
 }
 
 // Blocks cross-site form posts: state-changing requests must come from our own pages.
@@ -122,62 +144,19 @@ export function sameOrigin(request) {
   return origin === new URL(request.url).origin;
 }
 
-// ---------- Stripe ----------
-
-function stripeBase(env) {
-  return env.STRIPE_API_BASE || "https://api.stripe.com";
-}
-
-export async function stripe(env, method, path, params) {
-  if (!env.STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is not set");
-  let url = `${stripeBase(env)}${path}`;
-  const init = {
-    method,
-    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
-  };
-  if (params) {
-    const body = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) {
-      if (Array.isArray(v)) v.forEach((item) => body.append(`${k}[]`, item));
-      else if (v !== undefined && v !== null) body.append(k, String(v));
-    }
-    if (method === "GET") url += `?${body}`;
-    else {
-      init.body = body;
-      init.headers["Content-Type"] = "application/x-www-form-urlencoded";
-    }
-  }
-  const res = await fetch(url, init);
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Stripe ${path} failed: ${data?.error?.message || res.status}`);
-  return data;
-}
-
-// Finds the Stripe customer for an email. Stripe's email filter is case-sensitive,
-// so we also try the address exactly as stored on older records.
-export async function findStripeCustomer(env, email) {
-  const list = await stripe(env, "GET", "/v1/customers", { email, limit: 10 });
-  let customers = list.data || [];
-  if (!customers.length) {
-    const search = await stripe(env, "GET", "/v1/customers/search", { query: `email:'${email.replace(/'/g, "")}'` });
-    customers = (search.data || []).filter((c) => (c.email || "").toLowerCase() === email);
-  }
-  customers = customers.filter((c) => !c.deleted);
-  if (!customers.length) return null;
-  // Prefer the record that actually has a card saved.
-  return customers.find((c) => c.invoice_settings?.default_payment_method) || customers[0];
-}
-
 // ---------- Make.com bridge ----------
 // One webhook handles every account event; the "event" field tells the
-// scenario's router which path to take.
+// scenario's router which path to take. Every call carries ACCOUNT_WEBHOOK_KEY,
+// and the scenario ignores calls without it.
 
 export async function sendToMake(env, event, data, { expectResponse = false } = {}) {
-  if (!env.ACCOUNT_WEBHOOK_URL) return null;
+  if (!env.ACCOUNT_WEBHOOK_URL || !env.ACCOUNT_WEBHOOK_KEY) {
+    throw new Error("ACCOUNT_WEBHOOK_URL or ACCOUNT_WEBHOOK_KEY is not set");
+  }
   const res = await fetch(env.ACCOUNT_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event, timestamp: new Date().toISOString(), ...data }),
+    body: JSON.stringify({ event, key: env.ACCOUNT_WEBHOOK_KEY, timestamp: new Date().toISOString(), ...data }),
   });
   if (!res.ok) throw new Error(`Make webhook returned ${res.status}`);
   if (!expectResponse) return true;
@@ -185,6 +164,33 @@ export async function sendToMake(env, event, data, { expectResponse = false } = 
   try {
     return JSON.parse(text);
   } catch {
-    return null; // scenario answered "Accepted" instead of JSON — treat as no CRM data
+    throw new Error("Make webhook answered without JSON (wrong key, or the scenario is off)");
   }
+}
+
+// ---------- CRM (Google Sheet, read through Make) ----------
+
+const CRM_RANGES = ["Customers", "Invoices", "Jobs"];
+
+// Turns a sheet's rows into objects keyed by its header row.
+function rowsToObjects(values) {
+  const [header = [], ...rows] = values || [];
+  return rows.map((r) => Object.fromEntries(header.map((h, i) => [String(h).trim(), r[i] ?? ""])));
+}
+
+// One read of the Customers, Invoices and Jobs tabs.
+export async function readCrm(env) {
+  const data = await sendToMake(env, "crm_snapshot", {}, { expectResponse: true });
+  const ranges = data?.valueRanges;
+  if (!Array.isArray(ranges) || ranges.length !== CRM_RANGES.length) throw new Error("CRM snapshot came back empty");
+  const out = {};
+  CRM_RANGES.forEach((name, i) => {
+    out[name.toLowerCase()] = rowsToObjects(ranges[i].values);
+  });
+  return out;
+}
+
+// Real customers only (IDs like LC-0001), not missed-call leads or test rows.
+export function findCustomers(crm, test) {
+  return crm.customers.filter((c) => /^LC-\d+$/.test(c.Customer_ID) && test(c));
 }
