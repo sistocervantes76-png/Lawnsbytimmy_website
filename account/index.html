@@ -122,6 +122,10 @@
     table.payments td, table.payments th { padding-right: 6px; }
   }
   .empty { color: var(--muted); font-size: 0.93rem; margin: 0; }
+  .balance { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .balance.due { color: #a45200; }
+  .pay-how { margin: 6px 0 0; color: var(--muted); }
+  .code-input { font-size: 1.4rem; letter-spacing: 0.3em; text-align: center; font-variant-numeric: tabular-nums; }
 
   .req-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 520px) { .req-row { grid-template-columns: 1fr; } }
@@ -149,19 +153,26 @@
   <!-- SIGN IN -->
   <section class="signin" id="signinView" hidden>
     <h1>Sign in to your account</h1>
-    <p class="lead">Enter the email you gave us when you signed up. We'll send you a link to sign in. No password needed.</p>
+    <p class="lead" id="signinLead">Enter the cell number we have on file. We'll text you a 6-digit code. No password needed.</p>
     <div class="card">
       <div class="alert alert-err" id="signinError" hidden></div>
       <div class="alert alert-ok" id="signinSent" hidden></div>
-      <form id="signinForm" novalidate>
+      <form id="phoneForm" novalidate>
         <div class="field">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
+          <label for="phone">Cell number</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel-national" inputmode="tel" required placeholder="(954) 555-0123">
         </div>
-        <button class="btn btn-primary full" type="submit">Email me a sign-in link</button>
+        <button class="btn btn-primary full" type="submit">Text me a code</button>
       </form>
-      <p class="note">The link works for 15 minutes. Not seeing it? Check spam, or call <a href="tel:+19548803500">(954) 880-3500</a>.</p>
-      <p class="note" id="devLink" hidden></p>
+      <form id="codeForm" novalidate hidden>
+        <div class="field">
+          <label for="code">6-digit code</label>
+          <input type="text" id="code" name="code" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" required placeholder="123456" class="code-input">
+        </div>
+        <button class="btn btn-primary full" type="submit">Sign in</button>
+        <p class="note"><button type="button" class="btn-link" id="newCode">Text me a new code</button> · <button type="button" class="btn-link" id="otherPhone">Use a different number</button></p>
+      </form>
+      <p class="note">The code works for 10 minutes. No text? Call <a href="tel:+19548803500">(954) 880-3500</a>.</p>
     </div>
     <p class="note" style="text-align:center">New here? <a href="/#quote-form">Get a quote</a></p>
   </section>
@@ -171,13 +182,13 @@
     <div class="welcome">
       <div>
         <h1 id="hello">Welcome back</h1>
-        <p id="helloEmail"></p>
+        <p id="helloPhone"></p>
       </div>
     </div>
 
     <div class="next-visit" id="nextVisit">
       <div>
-        <div class="label">Your service</div>
+        <div class="label">Next visit</div>
         <div class="value" id="nextVisitValue">On your regular route day</div>
         <div class="meta" id="nextVisitMeta"></div>
       </div>
@@ -193,22 +204,27 @@
       </div>
 
       <div class="card">
-        <h2>Billing</h2>
-        <p class="sub">We charge this card after each completed visit.</p>
-        <div class="card-on-file" id="cardOnFile"></div>
-        <button class="btn btn-primary" id="billingBtn">Update card &amp; view receipts</button>
-        <div class="alert alert-err" id="billingError" hidden style="margin-top:14px"></div>
+        <h2>Balance</h2>
+        <p class="sub">Payment is due when the visit is done.</p>
+        <div class="balance" id="balanceValue">$0.00</div>
+        <p class="pay-how" id="payHow"></p>
       </div>
 
       <div class="card span-2">
-        <h2>Recent payments</h2>
-        <p class="sub">Your last 12 charges. Tap a receipt to view or print it.</p>
-        <div id="paymentsWrap"></div>
+        <h2>Your bills</h2>
+        <p class="sub">Your last 12 bills from Lawns by Timmy.</p>
+        <div id="billsWrap"></div>
+      </div>
+
+      <div class="card span-2">
+        <h2>Recent visits</h2>
+        <p class="sub">The last times our crew was out.</p>
+        <div id="visitsWrap"></div>
       </div>
 
       <div class="card span-2" id="requests">
         <h2>Need something?</h2>
-        <p class="sub">Send a request and we'll confirm by text or email.</p>
+        <p class="sub">Send a request and we'll confirm by text.</p>
         <div class="alert alert-ok" id="reqOk" hidden></div>
         <div class="alert alert-err" id="reqErr" hidden></div>
         <form id="reqForm" novalidate>
@@ -261,122 +277,138 @@
   function text(el, value) { el.textContent = value; return el; }
 
   // ---------- sign in ----------
+  let lastPhone = "";
   function showSignin() {
     show("loadingView", false); show("dashView", false); show("logoutBtn", false);
-    show("signinView");
-    const linkError = new URLSearchParams(location.search).get("error");
-    if (linkError === "expired" || linkError === "used") {
-      text($("signinError"), linkError === "used"
-        ? "That sign-in link was already used. Each link works once. Enter your email for a new one."
-        : "That sign-in link expired. Enter your email for a new one.");
-      show("signinError");
-    }
+    show("signinView"); showPhoneStep();
+  }
+  function showPhoneStep() {
+    show("phoneForm"); show("codeForm", false); show("signinSent", false);
+    $("signinLead").textContent = "Enter the cell number we have on file. We'll text you a 6-digit code. No password needed.";
+  }
+  function showCodeStep(message) {
+    show("phoneForm", false); show("codeForm");
+    text($("signinSent"), message); show("signinSent");
+    $("signinLead").textContent = "Check your texts for a message from (954) 880-3500.";
+    $("code").value = ""; $("code").focus();
+  }
+  const digits = (v) => String(v || "").replace(/\D/g, "");
+
+  async function requestCode(phone, btn) {
+    show("signinError", false);
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Sending…";
+    const { ok, data } = await api("/api/account/login", { method: "POST", body: JSON.stringify({ phone }) });
+    btn.disabled = false; btn.textContent = label;
+    if (!ok) { text($("signinError"), data.error || "Something went wrong. Please try again."); show("signinError"); return; }
+    lastPhone = phone;
+    showCodeStep(data.message);
   }
 
-  $("signinForm").addEventListener("submit", async (e) => {
+  $("phoneForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    show("signinError", false); show("signinSent", false);
-    const email = $("email").value.trim();
-    if (!$("email").checkValidity() || !email) {
-      text($("signinError"), "Please enter a valid email address."); show("signinError"); return;
-    }
-    const btn = e.target.querySelector("button");
-    btn.disabled = true; btn.textContent = "Sending…";
-    const { ok, data } = await api("/api/account/login", { method: "POST", body: JSON.stringify({ email }) });
-    btn.disabled = false; btn.textContent = "Email me a sign-in link";
-    if (!ok) { text($("signinError"), data.error || "Something went wrong. Please try again."); show("signinError"); return; }
-    text($("signinSent"), data.message); show("signinSent");
-    if (data.dev_login_url) {
-      $("devLink").innerHTML = "";
-      const a = document.createElement("a"); a.href = data.dev_login_url; a.textContent = "Dev sign-in link";
-      $("devLink").append(a); show("devLink");
-    }
+    const d = digits($("phone").value).replace(/^1(?=\d{10}$)/, "");
+    if (d.length !== 10) { text($("signinError"), "Please enter your 10-digit cell number."); show("signinError"); return; }
+    requestCode(d, e.target.querySelector("button"));
+  });
+  $("newCode").addEventListener("click", (e) => { if (lastPhone) requestCode(lastPhone, e.target); else showPhoneStep(); });
+  $("otherPhone").addEventListener("click", () => { show("signinError", false); showPhoneStep(); $("phone").focus(); });
+
+  $("codeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    show("signinError", false);
+    const code = digits($("code").value);
+    if (code.length !== 6) { text($("signinError"), "Enter the 6-digit code from the text."); show("signinError"); return; }
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Checking…";
+    const { ok, data } = await api("/api/account/verify", { method: "POST", body: JSON.stringify({ code }) });
+    btn.disabled = false; btn.textContent = "Sign in";
+    if (!ok) { text($("signinError"), data.error || "That code didn't work."); show("signinError"); return; }
+    loadAccount();
   });
 
   // ---------- dashboard ----------
-  const fmtMoney = (n, cur) => new Intl.NumberFormat("en-US", { style: "currency", currency: (cur || "usd").toUpperCase() }).format(n);
-  const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmtMoney = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
+  const fmtDate = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmtPhone = (d) => d && d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : d || "";
+
+  function table(headers, rows, emptyText) {
+    if (!rows.length) { const e = text(document.createElement("p"), emptyText); e.className = "empty"; return e; }
+    const t = document.createElement("table"); t.className = "payments";
+    const head = document.createElement("tr");
+    headers.forEach(([label, cls]) => { const th = text(document.createElement("th"), label); if (cls) th.className = cls; head.append(th); });
+    const thead = document.createElement("thead"); thead.append(head); t.append(thead);
+    const tb = document.createElement("tbody");
+    rows.forEach((cells) => {
+      const tr = document.createElement("tr");
+      cells.forEach(([value, cls]) => {
+        const td = document.createElement("td"); if (cls) td.className = cls;
+        if (value instanceof Node) td.append(value); else text(td, value);
+        tr.append(td);
+      });
+      tb.append(tr);
+    });
+    t.append(tb); return t;
+  }
 
   function renderDashboard(d) {
     const p = d.property || {};
-    const first = p.first_name || (d.name || "").split(" ")[0];
-    text($("hello"), first ? `Hi, ${first}` : "Welcome back");
-    text($("helloEmail"), d.email);
+    text($("hello"), d.first_name ? `Hi, ${d.first_name}` : "Welcome back");
+    text($("helloPhone"), fmtPhone(d.phone));
 
-    // next visit banner
-    if (p.next_service_date) {
-      const dt = new Date(p.next_service_date + (p.next_service_date.length === 10 ? "T12:00:00" : ""));
-      text($("nextVisitValue"), isNaN(dt) ? p.next_service_date
-        : dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }));
+    if (d.next_service_date) {
+      const dt = new Date(d.next_service_date + "T12:00:00");
+      text($("nextVisitValue"), dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }));
+    } else {
+      text($("nextVisitValue"), p.service_day ? `Your regular ${p.service_day} route` : "On your regular route day");
     }
-    const metaBits = [p.frequency, p.services].filter(Boolean);
-    text($("nextVisitMeta"), metaBits.join(" · "));
+    text($("nextVisitMeta"), [p.frequency, p.services].filter(Boolean).join(" · "));
 
-    // property
     const rows = [
       ["Address", [p.service_address, p.city, p.zip].filter(Boolean).join(", ")],
       ["Schedule", p.frequency],
       ["Services", p.services],
       ["Gate / pets / access", p.access_notes],
-      ["Status", p.status],
     ].filter(([, v]) => v);
     const dl = $("propertyDetails"); dl.innerHTML = "";
     rows.forEach(([k, v]) => { dl.append(text(document.createElement("dt"), k), text(document.createElement("dd"), v)); });
     show("propertyEmpty", rows.length === 0);
 
-    // card on file
-    const c = d.card, box = $("cardOnFile"); box.innerHTML = "";
-    if (c) {
-      const chip = text(document.createElement("div"), c.brand === "american_express" ? "Amex" : c.brand); chip.className = "card-chip";
-      const info = document.createElement("div");
-      info.append(text(document.createElement("strong"), `•••• ${c.last4}`),
-                  text(document.createElement("span"), `Expires ${String(c.exp_month).padStart(2, "0")}/${String(c.exp_year).slice(-2)}`));
-      const now = new Date(), expired = c.exp_year < now.getFullYear() || (c.exp_year === now.getFullYear() && c.exp_month < now.getMonth() + 1);
-      if (expired) { const pill = text(document.createElement("span"), "Expired, please update"); pill.className = "pill warn"; pill.style.marginLeft = "6px"; info.querySelector("span").after(pill); }
-      box.append(chip, info);
-    } else {
-      const p2 = text(document.createElement("p"), "No card on file yet. Add one so we can bill after each visit."); p2.className = "empty"; box.append(p2);
-    }
+    text($("balanceValue"), fmtMoney(d.balance));
+    $("balanceValue").classList.toggle("due", d.balance > 0);
+    const methods = d.pay_methods || ["Cash", "Apple Pay"];
+    text($("payHow"), (d.balance > 0 ? "Pay by " : "You're all paid up. We take ") +
+      methods.slice(0, -1).join(", ") + (methods.length > 1 ? " or " : "") + methods[methods.length - 1] + ".");
 
-    // payments
-    const wrap = $("paymentsWrap"); wrap.innerHTML = "";
-    if (!d.payments || !d.payments.length) {
-      const e = text(document.createElement("p"), "No payments yet. They'll show up here after your first visit."); e.className = "empty"; wrap.append(e);
-    } else {
-      const t = document.createElement("table"); t.className = "payments";
-      t.innerHTML = '<thead><tr><th>Date</th><th class="desc">Description</th><th>Status</th><th class="amt">Amount</th><th></th></tr></thead>';
-      const tb = document.createElement("tbody");
-      d.payments.forEach((pay) => {
-        const tr = document.createElement("tr");
-        const status = document.createElement("span");
-        status.className = "pill" + (pay.status === "succeeded" ? "" : " warn");
-        text(status, pay.status === "succeeded" ? "Paid" : pay.status.charAt(0).toUpperCase() + pay.status.slice(1));
-        const tdStatus = document.createElement("td"); tdStatus.append(status);
-        const tdRcpt = document.createElement("td");
-        if (pay.receipt_url) { const a = text(document.createElement("a"), "Receipt"); a.href = pay.receipt_url; a.target = "_blank"; a.rel = "noopener"; tdRcpt.append(a); }
-        const amt = text(document.createElement("td"), fmtMoney(pay.amount, pay.currency)); amt.className = "amt";
-        const tdDesc = text(document.createElement("td"), pay.description); tdDesc.className = "desc";
-        const tdDate = text(document.createElement("td"), fmtDate(pay.date)); tdDate.style.whiteSpace = "nowrap";
-        tr.append(tdDate, tdDesc, tdStatus, amt, tdRcpt);
-        tb.append(tr);
-      });
-      t.append(tb); wrap.append(t);
-    }
+    $("billsWrap").innerHTML = "";
+    $("billsWrap").append(table(
+      [["Date"], ["Description", "desc"], ["Status"], ["Amount", "amt"]],
+      (d.bills || []).map((b) => {
+        const pill = text(document.createElement("span"), b.paid ? "Paid" : "Due");
+        pill.className = "pill" + (b.paid ? "" : " warn");
+        return [[fmtDate(b.date)], [b.description, "desc"], [pill], [fmtMoney(b.amount), "amt"]];
+      }),
+      "No bills yet. They'll show up here after your first visit."
+    ));
+
+    $("visitsWrap").innerHTML = "";
+    $("visitsWrap").append(table(
+      [["Date"], ["Service"]],
+      (d.visits || []).map((v) => [[fmtDate(v.date)], [v.service]]),
+      "No visits on record yet."
+    ));
 
     show("loadingView", false); show("signinView", false);
     show("dashView"); show("logoutBtn");
     history.replaceState(null, "", "/account/");
   }
 
-  $("billingBtn").addEventListener("click", async (e) => {
-    show("billingError", false);
-    e.target.disabled = true; e.target.textContent = "Opening…";
-    const { ok, status, data } = await api("/api/account/billing", { method: "POST", body: "{}" });
-    if (ok && data.url) { location.href = data.url; return; }
-    if (status === 401) return showSignin();
-    e.target.disabled = false; e.target.innerHTML = "Update card &amp; view receipts";
-    text($("billingError"), data.error || "Couldn't open billing."); show("billingError");
-  });
+  async function loadAccount() {
+    const { ok, status, data } = await api("/api/account/me");
+    if (ok && data.signed_in) return renderDashboard(data);
+    showSignin();
+    if (status >= 500) { text($("signinError"), data.error || "We couldn't load your account right now. Please call (954) 880-3500."); show("signinError"); }
+  }
 
   // requests form
   function syncReqForm() {
@@ -408,11 +440,7 @@
   });
 
   // ---------- boot ----------
-  (async () => {
-    const { ok, data } = await api("/api/account/me");
-    if (ok && data.signed_in) renderDashboard(data);
-    else showSignin();
-  })();
+  loadAccount();
 </script>
 </body>
 </html>

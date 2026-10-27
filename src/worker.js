@@ -5,7 +5,6 @@ import * as login from "./account/login.js";
 import * as verify from "./account/verify.js";
 import * as logout from "./account/logout.js";
 import * as me from "./account/me.js";
-import * as billing from "./account/billing.js";
 import * as request from "./account/request.js";
 import { json } from "./account/lib.js";
 
@@ -14,7 +13,6 @@ const routes = {
   "/api/account/verify": verify,
   "/api/account/logout": logout,
   "/api/account/me": me,
-  "/api/account/billing": billing,
   "/api/account/request": request,
 };
 

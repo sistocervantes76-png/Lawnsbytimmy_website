@@ -1,7 +1,7 @@
 // POST /api/account/request  { type, date?, message? }
 // Sends a customer request (skip a visit, extra service, update access notes, other)
 // to the Make.com scenario, which logs it to the CRM and notifies Timmy.
-import { json, getSession, sameOrigin, sendToMake } from "./lib.js";
+import { json, getSession, sameOrigin, sendToMake, PHONE } from "./lib.js";
 
 const TYPES = {
   skip_visit: "Skip a visit",
@@ -29,22 +29,18 @@ export async function onRequestPost({ request, env }) {
   if (type !== "skip_visit" && !message) return json({ error: "Please add a short note." }, 400);
   if (type === "skip_visit" && !date) return json({ error: "Please pick the date to skip." }, 400);
 
-  if (!env.ACCOUNT_WEBHOOK_URL) {
-    return json({ error: "Requests aren't switched on yet. Please call (954) 880-3500." }, 503);
-  }
-
   try {
     await sendToMake(env, "service_request", {
-      email: session.email,
-      stripe_customer_id: session.cid,
+      customer_id: session.cid,
+      phone: session.phone,
       request_type: type,
       request_label: TYPES[type],
       date,
       message,
     });
-    return json({ ok: true, message: "Got it. We'll confirm by text or email." });
+    return json({ ok: true, message: "Got it. We'll confirm by text." });
   } catch (err) {
     console.error("request error", err);
-    return json({ error: "That didn't go through. Please call (954) 880-3500." }, 500);
+    return json({ error: `That didn't go through. Please call ${PHONE}.` }, 500);
   }
 }
