@@ -38,6 +38,47 @@ export function linkStore(env) {
   return env.LOGIN_LINKS || null;
 }
 
+// ---------- Cloudflare settings (Variables and Secrets) ----------
+// These three must exist on the lawnsbytimmy-website Worker, under
+// Settings -> Variables and Secrets (NOT under Settings -> Build, which the
+// running code can't see). Names are case-sensitive.
+export const REQUIRED_SETTINGS = ["SESSION_SECRET", "ACCOUNT_WEBHOOK_URL", "ACCOUNT_WEBHOOK_KEY"];
+
+// Reads a setting, forgiving stray spaces/newlines or quotes pasted around the value.
+export function setting(env, name) {
+  const raw = env && env[name];
+  if (typeof raw !== "string") return "";
+  return raw.trim().replace(/^(["'])(.*)\1$/s, "$2").trim();
+}
+
+// Plain-words status of each required setting: "ok", "missing", or what's wrong with it.
+export function settingsStatus(env) {
+  const status = {};
+  for (const name of REQUIRED_SETTINGS) status[name] = setting(env, name) ? "ok" : "missing";
+  if (status.SESSION_SECRET === "ok" && setting(env, "SESSION_SECRET").length < 32) {
+    status.SESSION_SECRET = "too short (needs 32+ characters)";
+  }
+  const url = setting(env, "ACCOUNT_WEBHOOK_URL");
+  if (url && !/^https:\/\/hook\.[a-z0-9.]*make\.com\//i.test(url)) {
+    status.ACCOUNT_WEBHOOK_URL = "set, but doesn't look like a Make webhook address (https://hook...make.com/...)";
+  }
+  return status;
+}
+
+// Logs a clear error and returns a 503 response when a required setting is
+// missing or wrong; returns null when everything is in place.
+export function settingsProblem(env, where) {
+  const status = settingsStatus(env);
+  const bad = Object.entries(status).filter(([, v]) => v !== "ok");
+  if (!bad.length) return null;
+  console.error(
+    `[account] ${where} stopped before calling Make: Cloudflare setting(s) not usable -> ` +
+      bad.map(([k, v]) => `${k}: ${v}`).join("; ") +
+      ". Add them on the lawnsbytimmy-website Worker under Settings > Variables and Secrets, then redeploy."
+  );
+  return json({ error: `Account sign-in isn't available right now. Please call ${PHONE}.` }, 503);
+}
+
 // ---------- small utils ----------
 
 export function json(data, status = 200, headers = {}) {
@@ -133,7 +174,7 @@ export function sessionCookie(token, maxAgeSeconds) {
 // Sessions from the old Stripe email sign-in carry a Stripe id; they no longer count.
 export async function getSession(request, env) {
   const token = getCookie(request, SESSION_COOKIE);
-  const session = token ? await verifyToken(token, env.SESSION_SECRET, "session") : null;
+  const session = token ? await verifyToken(token, setting(env, "SESSION_SECRET"), "session") : null;
   return session && /^LC-/.test(session.cid || "") ? session : null;
 }
 
@@ -150,15 +191,23 @@ export function sameOrigin(request) {
 // and the scenario ignores calls without it.
 
 export async function sendToMake(env, event, data, { expectResponse = false } = {}) {
-  if (!env.ACCOUNT_WEBHOOK_URL || !env.ACCOUNT_WEBHOOK_KEY) {
-    throw new Error("ACCOUNT_WEBHOOK_URL or ACCOUNT_WEBHOOK_KEY is not set");
+  const url = setting(env, "ACCOUNT_WEBHOOK_URL");
+  const key = setting(env, "ACCOUNT_WEBHOOK_KEY");
+  const missing = [!url && "ACCOUNT_WEBHOOK_URL", !key && "ACCOUNT_WEBHOOK_KEY"].filter(Boolean);
+  if (missing.length) {
+    throw new Error(`Not calling Make (${event}): Cloudflare setting(s) missing: ${missing.join(", ")}`);
   }
-  const res = await fetch(env.ACCOUNT_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event, key: env.ACCOUNT_WEBHOOK_KEY, timestamp: new Date().toISOString(), ...data }),
-  });
-  if (!res.ok) throw new Error(`Make webhook returned ${res.status}`);
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, key, timestamp: new Date().toISOString(), ...data }),
+    });
+  } catch (err) {
+    throw new Error(`Couldn't reach the Make webhook (${event}): ${err.message}`);
+  }
+  if (!res.ok) throw new Error(`Make webhook returned ${res.status} for ${event}`);
   if (!expectResponse) return true;
   const text = await res.text();
   try {

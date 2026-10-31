@@ -1,7 +1,7 @@
 // POST /api/account/request  { type, date?, message? }
 // Sends a customer request (skip a visit, extra service, update access notes, other)
 // to the Make.com scenario, which logs it to the CRM and notifies Timmy.
-import { json, getSession, sameOrigin, sendToMake, PHONE } from "./lib.js";
+import { json, settingsProblem, getSession, sameOrigin, sendToMake, PHONE } from "./lib.js";
 
 const TYPES = {
   skip_visit: "Skip a visit",
@@ -12,6 +12,8 @@ const TYPES = {
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "Bad origin" }, 403);
+  const problem = settingsProblem(env, "service request");
+  if (problem) return problem;
   const session = await getSession(request, env);
   if (!session) return json({ signed_in: false }, 401);
 
