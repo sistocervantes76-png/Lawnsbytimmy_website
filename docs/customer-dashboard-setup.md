@@ -38,6 +38,13 @@ Cloudflare dashboard → **Workers & Pages** → **lawnsbytimmy-website** → **
 
 `STRIPE_SECRET_KEY` is no longer used; you can delete it.
 
+**Common mix-ups (each one stops sign-in before it ever reaches Make):**
+- Adding them under **Settings → Build → Variables** instead. Build variables are only used while building; the running site can't see them.
+- Adding them to a different project (for example an old Cloudflare **Pages** project) instead of the **lawnsbytimmy-website** Worker that serves the domain.
+- A typo or different capitalization in the name. The names must match the table exactly.
+
+**Check it:** open `lawnsbytimmy.com/api/account/health`. Every setting should say `"ok"`. It only shows ok/missing, never the values. If something is missing, sign-in returns "isn't available right now" and the Worker's **Logs** tab shows exactly which name is missing.
+
 ## Step 2: Make sure the site is served by the Worker
 
 1. Open the **lawnsbytimmy-website** Worker → **Settings** → **Domains & Routes**. `lawnsbytimmy.com` (and `www.lawnsbytimmy.com` if you use it) should be listed as a **Custom domain**. If not: **Add** → **Custom domain**.

@@ -22,6 +22,8 @@ import {
   CODE_COOKIE,
   CODE_MINUTES,
   PHONE,
+  setting,
+  settingsProblem,
 } from "./lib.js";
 
 const PHONE_COOLDOWN_SECONDS = 60; // KV's shortest allowed expiry
@@ -33,6 +35,8 @@ function sixDigits() {
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "Bad origin" }, 403);
+  const problem = settingsProblem(env, "login");
+  if (problem) return problem;
 
   if (await overLimit(env.LOGIN_IP_LIMITER, `ip:${clientIp(request)}`)) {
     return json({ error: `Too many tries. Please wait a minute and try again, or call ${PHONE}.` }, 429);
@@ -56,10 +60,10 @@ export async function onRequestPost({ request, env }) {
         phone,
         cid: cid || "",
         n,
-        h: await hmac(env.SESSION_SECRET, `${n}:${code || crypto.randomUUID()}`),
+        h: await hmac(setting(env, "SESSION_SECRET"), `${n}:${code || crypto.randomUUID()}`),
         exp: Date.now() + CODE_MINUTES * 60 * 1000,
       },
-      env.SESSION_SECRET
+      setting(env, "SESSION_SECRET")
     );
     return json(
       { ok: true, message: `If that number is on a Lawns by Timmy account, we just texted it a 6-digit code.` },

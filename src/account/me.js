@@ -1,6 +1,6 @@
 // GET /api/account/me — everything the dashboard shows for the signed-in customer.
 // It all comes from the CRM sheet (Customers, Invoices and Jobs tabs), read through Make.com.
-import { json, getSession, readCrm, findCustomers, normalizePhone, PHONE } from "./lib.js";
+import { json, settingsProblem, getSession, readCrm, findCustomers, normalizePhone, PHONE } from "./lib.js";
 
 const money = (v) => {
   const n = parseFloat(String(v || "").replace(/[^0-9.\-]/g, ""));
@@ -16,6 +16,8 @@ function isoDate(v) {
 const newestFirst = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
 export async function onRequestGet({ request, env }) {
+  const problem = settingsProblem(env, "dashboard");
+  if (problem) return problem;
   const session = await getSession(request, env);
   if (!session) return json({ signed_in: false }, 401);
 

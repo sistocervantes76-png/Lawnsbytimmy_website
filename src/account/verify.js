@@ -23,6 +23,8 @@ import {
   CODE_COOKIE,
   SESSION_DAYS,
   PHONE,
+  setting,
+  settingsProblem,
 } from "./lib.js";
 
 export async function onRequestGet({ request }) {
@@ -34,6 +36,8 @@ export async function onRequestGet({ request }) {
 
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "Bad origin" }, 403);
+  const problem = settingsProblem(env, "verify");
+  if (problem) return problem;
 
   if (await overLimit(env.LOGIN_IP_LIMITER, `verify:${clientIp(request)}`)) {
     return json({ error: "Too many tries. Please wait a minute and try again." }, 429);
@@ -49,7 +53,7 @@ export async function onRequestPost({ request, env }) {
   if (code.length !== 6) return json({ error: "Enter the 6-digit code from the text." }, 400);
 
   try {
-    const challenge = await verifyToken(getCookie(request, CODE_COOKIE), env.SESSION_SECRET, "code");
+    const challenge = await verifyToken(getCookie(request, CODE_COOKIE), setting(env, "SESSION_SECRET"), "code");
     if (!challenge) return json({ error: "That code expired. Tap “Text me a new code”.", expired: true }, 400);
 
     if (await overLimit(env.LOGIN_EMAIL_LIMITER, `code:${challenge.n}`)) {
@@ -61,7 +65,7 @@ export async function onRequestPost({ request, env }) {
       return json({ error: "That code was already used. Tap “Text me a new code”.", expired: true }, 400);
     }
 
-    const expected = await hmac(env.SESSION_SECRET, `${challenge.n}:${code}`);
+    const expected = await hmac(setting(env, "SESSION_SECRET"), `${challenge.n}:${code}`);
     if (!challenge.cid || !sameString(expected, challenge.h)) {
       return json({ error: `That code doesn't match. Check the text and try again, or call ${PHONE}.` }, 400);
     }
@@ -74,7 +78,7 @@ export async function onRequestPost({ request, env }) {
     const maxAge = SESSION_DAYS * 24 * 60 * 60;
     const session = await signToken(
       { p: "session", cid: challenge.cid, phone: challenge.phone, exp: Date.now() + maxAge * 1000 },
-      env.SESSION_SECRET
+      setting(env, "SESSION_SECRET")
     );
     const headers = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store" });
     headers.append("Set-Cookie", sessionCookie(session, maxAge));
