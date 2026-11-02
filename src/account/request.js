@@ -40,7 +40,7 @@ export async function onRequestPost({ request, env }) {
     });
     return json({ ok: true, message: "Got it. We'll confirm by text." });
   } catch (err) {
-    console.error("request error", err);
+    console.error("request error: " + (err?.message || err), err?.stack);
     return json({ error: `That didn't go through. Please call ${PHONE}.` }, 500);
   }
 }

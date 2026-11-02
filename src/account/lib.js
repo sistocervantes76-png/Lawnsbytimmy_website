@@ -173,20 +173,51 @@ export async function sendToMake(env, event, data, { expectResponse = false } = 
 const CRM_RANGES = ["Customers", "Invoices", "Jobs"];
 
 // Turns a sheet's rows into objects keyed by its header row.
+// Make can hand a sheet row back as an object ({"0": "a", "1": "b"}) instead of an array.
+const asRow = (r) => (Array.isArray(r) ? r : r && typeof r === "object" ? Object.values(r) : []);
+
 function rowsToObjects(values) {
-  const [header = [], ...rows] = values || [];
+  const [header = [], ...rows] = (Array.isArray(values) ? values : []).map(asRow);
   return rows.map((r) => Object.fromEntries(header.map((h, i) => [String(h).trim(), r[i] ?? ""])));
 }
 
-// One read of the Customers, Invoices and Jobs tabs.
+// Make's "Transform to JSON" step can send the snapshot back as JSON inside a JSON string,
+// or wrapped in { body }. Unwrap until we reach the Google Sheets answer.
+function unwrapSnapshot(data) {
+  for (let i = 0; i < 3; i++) {
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch { return data; }
+    } else if (data && !Array.isArray(data.valueRanges) && data.body !== undefined) {
+      data = data.body;
+    } else {
+      break;
+    }
+  }
+  return data;
+}
+
+// Describes what came back without logging any customer data.
+function snapshotShape(data) {
+  if (data === null || typeof data !== "object") return `a ${typeof data}`;
+  const ranges = Array.isArray(data.valueRanges)
+    ? data.valueRanges.map((r) => `${r?.range || "?"} (${Array.isArray(r?.values) ? r.values.length : typeof r?.values} rows)`).join(", ")
+    : `valueRanges is ${typeof data.valueRanges}`;
+  return `keys [${Object.keys(data).join(", ")}]; ${ranges}`;
+}
+
+// One read of the Customers, Invoices and Jobs tabs. Tabs are matched by name, so the
+// order Make returns them in doesn't matter. Only Customers is required to sign in.
 export async function readCrm(env) {
-  const data = await sendToMake(env, "crm_snapshot", {}, { expectResponse: true });
-  const ranges = data?.valueRanges;
-  if (!Array.isArray(ranges) || ranges.length !== CRM_RANGES.length) throw new Error("CRM snapshot came back empty");
+  const data = unwrapSnapshot(await sendToMake(env, "crm_snapshot", {}, { expectResponse: true }));
+  const ranges = Array.isArray(data?.valueRanges) ? data.valueRanges : [];
+  const tab = (name) => ranges.find((r) => String(r?.range || "").replace(/'/g, "").startsWith(`${name}!`));
+  if (!tab("Customers")) throw new Error(`CRM snapshot has no Customers tab. Make sent: ${snapshotShape(data)}`);
   const out = {};
-  CRM_RANGES.forEach((name, i) => {
-    out[name.toLowerCase()] = rowsToObjects(ranges[i].values);
-  });
+  for (const name of CRM_RANGES) {
+    const r = tab(name);
+    if (!r) console.warn(`CRM snapshot is missing the ${name} tab. Make sent: ${snapshotShape(data)}`);
+    out[name.toLowerCase()] = rowsToObjects(r?.values);
+  }
   return out;
 }
 

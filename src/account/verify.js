@@ -81,7 +81,7 @@ export async function onRequestPost({ request, env }) {
     headers.append("Set-Cookie", cookie(CODE_COOKIE, "", 0, "/api/account/"));
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
   } catch (err) {
-    console.error("verify error", err);
+    console.error("verify error: " + (err?.message || err), err?.stack);
     return json({ error: `We couldn't sign you in right now. Please call ${PHONE}.` }, 500);
   }
 }

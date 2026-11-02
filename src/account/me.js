@@ -70,7 +70,7 @@ export async function onRequestGet({ request, env }) {
       business_phone: PHONE,
     });
   } catch (err) {
-    console.error("me error", err);
+    console.error("me error: " + (err?.message || err), err?.stack);
     return json({ error: "We couldn't load your account right now." }, 500);
   }
 }
