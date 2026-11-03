@@ -87,7 +87,7 @@ export async function onRequestPost({ request, env }) {
     if (store) await store.put(`cooldown:${phone}`, "1", { expirationTtl: PHONE_COOLDOWN_SECONDS });
     return reply(customer.Customer_ID, code);
   } catch (err) {
-    console.error("login error", err);
+    console.error("login error: " + (err?.message || err), err?.stack);
     return json({ error: `We couldn't text a code right now. Please call ${PHONE}.` }, 500);
   }
 }
