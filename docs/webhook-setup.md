@@ -61,3 +61,49 @@ Every submission sends this shape of information (this matches the format your a
   }
 }
 ```
+
+---
+
+# Connecting the Flow Audit Form (drainage & eco-restoration)
+
+The homepage has a second form, "Book your free Flow Audit" (the `#flow-audit` section). It is for drainage, dry creek bed, rain garden, biochar and backyard homestead leads, so it sends to its **own** Make webhook. It must not use the quote webhook above, because the `LBT_Quote` scenario would email the homeowner a mowing price.
+
+Until it is connected, the form shows "please call or text us at (954) 880-3500" when someone submits, so no lead disappears silently.
+
+## Step 1: Create the webhook in Make.com
+
+1. Create a new Scenario named `LBT_Flow_Audit`.
+2. Add "Webhooks" → "Custom webhook" as the trigger, click "Add", name it `LBT_Flow_Audit_Hook`, and copy the URL.
+3. Add what should happen next, for example:
+   - Google Sheets → Add a row to the "Lawns By Timmy CRM" sheet with status "New Lead" and source "Flow Audit Form".
+   - Gmail → Send an email to info@lawnsbytimmy.com with the details.
+4. Add "Webhooks" → "Webhook response" with status `200` so the website knows it arrived.
+5. Turn the scenario on.
+
+## Step 2: Paste the URL into the website
+
+In `index.html`, find:
+
+```js
+const AUDIT_WEBHOOK_URL = "REPLACE_WITH_AUDIT_WEBHOOK_URL";
+```
+
+and replace the placeholder with the new URL. Save, commit, and push.
+
+## What data gets sent
+
+```json
+{
+  "event": "flow_audit_requested",
+  "timestamp": "2026-01-01T12:00:00.000Z",
+  "audit_data": {
+    "name": "",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "issues": ["Water pools after rain", "Backyard homestead project"],
+    "best_time": "Morning",
+    "sms_consent": true
+  }
+}
+```
