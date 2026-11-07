@@ -1002,9 +1002,9 @@
   // FLOW AUDIT FORM: drainage / eco-restoration audit requests.
   // These go to their OWN Make.com webhook, not the quote webhook above,
   // so homeowners never get a mowing price email by mistake.
-  // Paste the new Make webhook address here (see docs/webhook-setup.md).
+  // Make scenario: LBT_Flow_Audit (see docs/webhook-setup.md).
   // ---------------------------------------------------------------
-  const AUDIT_WEBHOOK_URL = "REPLACE_WITH_AUDIT_WEBHOOK_URL";
+  const AUDIT_WEBHOOK_URL = "https://hook.us2.make.com/htowld73f9uv9fsbg81d1m5lfjobsgii";
 
   const auditForm = document.getElementById('auditForm');
   const auditSuccess = document.getElementById('auditSuccess');

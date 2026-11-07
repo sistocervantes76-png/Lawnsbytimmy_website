@@ -68,7 +68,7 @@ Every submission sends this shape of information (this matches the format your a
 
 The homepage has a second form, "Book your free Flow Audit" (the `#flow-audit` section). It is for drainage, dry creek bed, rain garden, biochar and backyard homestead leads, so it sends to its **own** Make webhook. It must not use the quote webhook above, because the `LBT_Quote` scenario would email the homeowner a mowing price.
 
-Until it is connected, the form shows "please call or text us at (954) 880-3500" when someone submits, so no lead disappears silently.
+**Status: connected** (Nov 2026) to the Make scenario `LBT_Flow_Audit` via the webhook `LBT_Flow_Audit_Hook`. Each request becomes a "New Lead" row in the CRM sheet (source "Flow Audit Form", issues and best time in the notes column) and an email to info@lawnsbytimmy.com. If the webhook ever fails, the form shows "please call or text us at (954) 880-3500", so no lead disappears silently. The steps below are how to rebuild it if you ever need to.
 
 ## Step 1: Create the webhook in Make.com
 

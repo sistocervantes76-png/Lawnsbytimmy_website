@@ -12,7 +12,7 @@ It is one self-contained file — `index.html` — with all the design (CSS) and
 
 The "Get My Instant Quote" form is fully wired up to Timmy's Make.com automation. Every submission is sent there instantly. See `docs/webhook-setup.md` if you ever need to change where it points (e.g. you rebuild the Make scenario and get a new address).
 
-**Flow Audit form (drainage & eco-restoration): not connected yet.** It needs its own Make webhook pasted into `AUDIT_WEBHOOK_URL` in `index.html`. Until then it asks visitors to call or text. Steps are at the bottom of `docs/webhook-setup.md`.
+**Flow Audit form (drainage & eco-restoration): connected.** It posts to its own Make scenario, `LBT_Flow_Audit`, which adds each request to the CRM sheet as a New Lead (source "Flow Audit Form") and emails info@lawnsbytimmy.com. It never goes through the quote scenario. Details are at the bottom of `docs/webhook-setup.md`.
 
 ## Customer accounts (lawnsbytimmy.com/account)
 
