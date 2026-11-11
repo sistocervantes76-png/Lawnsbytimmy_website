@@ -664,26 +664,30 @@
 
           <div class="form-row">
             <fieldset>
-              <legend>Gate Clearance Width</legend>
+              <legend>Which day works best (Tue-Sat)?</legend>
               <div class="radio-group">
                 <div class="choice-row">
-                  <input type="radio" id="gate_wide" name="gate_width" value="48" required>
-                  <label for="gate_wide">Gate is 36" wide or wider (fits commercial zero-turn mowers)</label>
+                  <input type="radio" id="day_tue" name="service_day" value="Tue" required>
+                  <label for="day_tue">Tue</label>
                 </div>
                 <div class="choice-row">
-                  <input type="radio" id="gate_narrow" name="gate_width" value="30" required>
-                  <label for="gate_narrow">Standard walk gate (under 36" wide)</label>
+                  <input type="radio" id="day_wed" name="service_day" value="Wed" required>
+                  <label for="day_wed">Wed</label>
+                </div>
+                <div class="choice-row">
+                  <input type="radio" id="day_thu" name="service_day" value="Thu" required>
+                  <label for="day_thu">Thu</label>
+                </div>
+                <div class="choice-row">
+                  <input type="radio" id="day_fri" name="service_day" value="Fri" required>
+                  <label for="day_fri">Fri</label>
+                </div>
+                <div class="choice-row">
+                  <input type="radio" id="day_sat" name="service_day" value="Sat" required>
+                  <label for="day_sat">Sat</label>
                 </div>
               </div>
-              <small class="hint">Narrower gates may require push-mower labor and a small service adjustment.</small>
             </fieldset>
-          </div>
-
-          <div class="form-row">
-            <div class="choice-row">
-              <input type="checkbox" id="pets_secured" name="pets_secured" required>
-              <label for="pets_secured">I confirm pets will be secured indoors during our scheduled service window.</label>
-            </div>
           </div>
 
           <div class="form-row">
@@ -865,8 +869,7 @@
         service_address: data.get('service_address') || "",
         city: data.get('city') || "",
         zip: data.get('zip') || "",
-        gate_width_inches: Number(data.get('gate_width')) || null,
-        pets_secured: data.get('pets_secured') === 'on',
+        service_day: data.get('service_day') || "",
         frequency: data.get('frequency') || "",
         add_ons: addOns,
         card_on_file_agreed: data.get('card_on_file_agreed') === 'on'
