@@ -1,6 +1,6 @@
 # Lawns website Option B apply plan — keep instant price, add Tue–Sat day
-Date: Tuesday, Nov 10, 2026, after 8:39 PM ET (America/New_York)
-Status: **DRAFT ONLY. NOT APPLIED. NO PR. NOT DEPLOYED.** Pending Proof's check, then Sisto's OK on the live change, before any website PR or 6246200 patch. This document does not change the website, Make, or the repo.
+Date: Tuesday, Nov 10, 2026, after 8:39 PM ET (America/New_York); revised after Proof's 8:47 PM ET FIX.
+Status: **DRAFT ONLY. NOT APPLIED. NO MERGE. NOT DEPLOYED.** Revised for Proof's FIX (module 4 body, apply order, settled form fields). Pending Proof's recheck, then Sisto's OK in his own words on making Option B and the 6246200 change live. This document does not change the website, Make, or the repo.
 
 **Do not publish:** webhook URLs (including `LEAD_WEBHOOK_URL` in `index.html`), connection IDs, keys, datastore IDs, spreadsheet IDs, or account emails other than info@lawnsbytimmy.com.
 
@@ -12,7 +12,7 @@ Status: **DRAFT ONLY. NOT APPLIED. NO PR. NOT DEPLOYED.** Pending Proof's check,
 
 **Superseded, 8:32–8:33 PM ET, Lawns chat (card answers, relayed by Lawns).** He first picked Option A (contact, address, and at that moment "service"; he prices web leads by hand), then "Option A with the Tue-Sat day choice, matching the text." Those answers are no longer current. The Option A apply plan `/workspace/playbooks/lawns-website-option-a-day-plan-2026-11-10.md` is shelved as history (SUPERSEDED banner) and must not be applied.
 
-This 8:39 PM ET pick is not yet approval to change the live site or 6246200. Apply only after Proof PASSes this plan and Sisto says yes to the live change, in his own words.
+This 8:39 PM ET pick is the direction, not approval to change the live site or 6246200. The only remaining question for Sisto is whether to make Option B and the 6246200 mapping change live, in his own words. Apply only after Proof PASSes this revised plan and he gives that yes.
 
 Starting sources (read-only, this draft):
 
@@ -70,9 +70,12 @@ Do not leave hidden inputs. Do not post `pets_secured: false` or `gate_width_inc
 
 Last cut stays off the form, as it is today.
 
-### 1.4 Card-on-file and add-ons
+### 1.4 Card-on-file and add-ons (settled for this patch)
 
-See §7. Until those questions are answered, the PR draft should **keep both on the form** as they are today, matching the Proof-passed Option B field list (two-question plan lines 217–220). If Sisto later says to move either one, drop it from the form and from the payload in the same PR.
+Both stay **exactly as they are on the live form**, per Proof's 8:47 PM ET check and the Proof-passed Option B field list (two-question plan lines 217–220). No keep-or-move question is needed, and this does not block Sisto's yes on the live change.
+
+- The required card-on-file checkbox (`card_on_file_agreed`, live `index.html` lines 738–739) stays on the form and in the payload. The module 4 owner email keeps the "Agreed to card on file" line.
+- The optional Add-On Requests (`add_ons`, the current three labels) stay on the form and in the payload (`data.getAll('add_ons')`, line 853). They are **collected today and then dropped**: 6246200 module 2 does not map Services (`values.12`), and module 4 does not mention add-ons. Writing add-ons to Services column 12 and the owner email is **later cleanup, not part of this patch**, so the live change stays small.
 
 ---
 
@@ -121,7 +124,7 @@ All required form edits are in **`index.html`** (blob `fceb4ff483c79f248bf2863cf
 - line 868: `gate_width_inches: Number(data.get('gate_width')) || null,`
 - line 869: `pets_secured: data.get('pets_secured') === 'on',`
 
-Leave `add_ons` and `card_on_file_agreed` as they are unless §7 is answered the other way. If add-ons stay, keep `const addOns = data.getAll('add_ons');` (line 853).
+Keep `add_ons` and `card_on_file_agreed` exactly as they are, and keep `const addOns = data.getAll('add_ons');` (line 853). Do not move or remove them in this PR.
 
 ### 2.2 Copy that mentions gate or pets (keep, not a required edit)
 
@@ -168,7 +171,7 @@ When the old form is still live and posts 48 or 30, this still writes `Gate: 48 
 
 **Service_Day already has values on existing customers. New leads must not overwrite them.** Five Active Recurring rows already have Wed or Thu in Service_Day (same abbreviation style). Later rows are blank. 6246200 module 2, 6671272 module 8, and 6618999 do not write `values.20` today. Because module 2 is **addRow only**, mapping `values.20` writes the new lead's day onto a **new** Website Form row. It does not update existing rows and cannot overwrite those five Active Recurring cells. This work must also **not** introduce a search-and-update, `updateRow`, or bulk write to column 20, and must not start writing Service_Day from 6671272 or 6618999.
 
-If add-ons stay on the form, mapping them into Services (`values.12`) remains an optional cleanup (they are collected today and then dropped). Do not do that in this patch unless Sisto asks (see §7).
+Do not map add-ons into Services (`values.12`) in this patch. They stay on the form and in the payload, and they will still be collected and then dropped until a later cleanup writes them to column 12 and the owner email.
 
 ### 3.3 Modules 5 and 6 — auto-price unchanged
 
@@ -184,20 +187,50 @@ Today, only module 2 (`values.15`) and module 4 (owner-email lines "Gate width: 
 - After the form change, the payload simply omits the two keys. Module 2's new Access_Notes formula (§3.2) and module 4's conditional lines (§3.5) treat empty as blank text, not an error.
 - Do not post `pets_secured: false`.
 
-### 3.5 Module 4 — owner email must include preferred day; gate/pets only if present
+### 3.5 Module 4 — complete replacement mapper (ready to paste)
 
-Always sends today after the CRM row. Required content changes (complete mapper: to, content, subject, bodyType). Keep the "NO EMAIL ON FORM" warning, the contact block, lot size, frequency, zone, and the existing "Price quoted: ${{sum(6.base; 6.trip)}} per visit" line (auto-price still runs under B; the $0 wording is already qualified for zone 3 / unknown size, and this work does not take that path down).
+Always sends today after the CRM row. `scenario_patch` `module_config_set` needs the **complete** mapper. `to`, `subject`, and `bodyType` are unchanged. The connection stays as it is (do not publish it). Only `content` changes, as pasted below.
 
-Add: `Preferred day: {{1.lead_data.service_day}}`
+Unchanged mapper fields (paste as-is):
 
-Replace the always-on gate and pets lines with:
+- `to`: `info@lawnsbytimmy.com`
+- `bodyType`: `rawHtml`
+- `subject`:
 
 ```
-{{if(empty(1.lead_data.gate_width_inches); emptystring; "Gate width: " + 1.lead_data.gate_width_inches + " in<br>")}}
-{{if(empty(1.lead_data.pets_secured); emptystring; "Pets secured: " + 1.lead_data.pets_secured + "<br>")}}
+New lead: {{1.lead_data.first_name}} {{1.lead_data.last_name}} - {{1.lead_data.city}}{{if(contains(1.lead_data.email; "@"); emptystring; " (NO EMAIL - contact them)")}}
 ```
 
-When those keys are missing, say once (not as a quoted value) that gate clearance and pets will be asked after they accept, once that step is live. When the old form is still live and those keys are present, the lines still print as they do today. Keep the card-on-file line if the checkbox stays on the form (§7). Subject can stay as it is.
+**Static sentence when gate and pets are both missing** (new-form posts). This does not say ACCEPT or the after-accept questions are live; those steps are TEST only and are not built:
+
+```
+Gate and pets were not asked on the form; confirm them with the customer
+```
+
+**Exact Make formula** (three parts, used inside `content` below):
+
+1. If `gate_width_inches` is present, print today's gate line; otherwise print nothing: `{{if(empty(1.lead_data.gate_width_inches); emptystring; "Gate width: " + 1.lead_data.gate_width_inches + " in<br>")}}`
+2. If `pets_secured` is present, print today's pets line; otherwise print nothing: `{{if(empty(1.lead_data.pets_secured); emptystring; "Pets secured: " + 1.lead_data.pets_secured + "<br>")}}`
+3. If **both** keys are empty, print the static sentence once; otherwise print nothing: `{{if(empty(1.lead_data.gate_width_inches); if(empty(1.lead_data.pets_secured); "Gate and pets were not asked on the form; confirm them with the customer<br>"; emptystring); emptystring)}}`
+
+Old-form posts (gate 48 or 30, and pets present) still get today's "Gate width" and "Pets secured" lines and do not get the static sentence. New-form posts (both keys omitted) get the static sentence once, not blank "Gate width:  in" / "Pets secured: " lines. ACCEPT and the after-accept questions stay TEST-only / not built; this sentence only tells Timmy to confirm gate and pets with the customer.
+
+**Complete replacement `content`** (paste this entire block into module 4; line breaks are the same CRLF style as the live body). It keeps the "NO EMAIL ON FORM" warning, the contact block, lot size, frequency, zone, the "Price quoted: ${{sum(6.base; 6.trip)}} per visit" line, and the card-on-file line. It adds the preferred-day line and the formulas above:
+
+```
+<p><strong>New website lead</strong></p>
+{{if(contains(1.lead_data.email; "@"); emptystring; "<p><strong>NO EMAIL ON FORM.</strong> This customer did NOT get an email from us. Call or text them.</p>")}}
+<p>Name: {{1.lead_data.first_name}} {{1.lead_data.last_name}}<br>
+Phone: {{1.lead_data.phone}}<br>
+OK to text: {{if(1.lead_data.sms_consent; "Yes"; "No (call or email only)")}}<br>
+Email: {{1.lead_data.email}}<br>
+Address: {{1.lead_data.service_address}}, {{1.lead_data.city}} {{1.lead_data.zip}}<br>
+Lot size: {{1.lead_data.lot_size}}<br>
+Frequency: {{1.lead_data.frequency}}<br>
+Preferred day: {{1.lead_data.service_day}}<br>
+{{if(empty(1.lead_data.gate_width_inches); emptystring; "Gate width: " + 1.lead_data.gate_width_inches + " in<br>")}}{{if(empty(1.lead_data.pets_secured); emptystring; "Pets secured: " + 1.lead_data.pets_secured + "<br>")}}{{if(empty(1.lead_data.gate_width_inches); if(empty(1.lead_data.pets_secured); "Gate and pets were not asked on the form; confirm them with the customer<br>"; emptystring); emptystring)}}Agreed to card on file: {{1.lead_data.card_on_file_agreed}}</p>
+<p><strong>Zone {{6.zone}}</strong>. Price quoted: ${{sum(6.base; 6.trip)}} per visit (trip fee ${{6.trip}}).<br>If Zone 3 or price shows $0, the customer got a "we'll confirm your price" message instead. Next: send them the price.</p>
+```
 
 ### 3.6 Modules not changed
 
@@ -216,7 +249,7 @@ Because the website PR is no-merge (and deploy is later), 6246200 may be patched
 | `pets_secured` true | Owner email still shows it. |
 | no `service_day` | Service_Day on the new row is blank. Owner email preferred-day line is blank. No error. |
 
-Once the new form is deployed, the same mappers write Service_Day, leave Access_Notes blank, omit gate/pets on the owner email (plus the "asked after accept" note), and still auto-price from size + frequency.
+Once the new form is deployed, the same mappers write Service_Day, leave Access_Notes blank, put the static "Gate and pets were not asked on the form; confirm them with the customer" sentence on the owner email, and still auto-price from size + frequency.
 
 ---
 
@@ -232,13 +265,19 @@ Once the new form is deployed, the same mappers write Service_Day, leave Access_
 
 ## 5. Order of work (nothing in this list is authorized yet)
 
-1. **Proof checks this plan** against the live homepage, GitHub `main` at `d648255` (or newer if main has moved), the Proof-passed two-question plan (`de5d2ad2…`), and the Nov 10 6246200 backup (modules sha `168a8ca0…`). No PR and no Make write on FIX, and none on PASS until step 2.
-2. **Sisto's OK on the live change**, in his own words, including answers to the open questions in §7. An agent's say-so is not approval. Independently verify his typed turn.
-3. **Website PR only, no merge, no deploy,** on `sistocervantes76-png/Lawnsbytimmy_website` from current `main`. Scope: the `index.html` edits in §2. Do not put webhook URLs in the PR body. CloudAgent / PR only; do not clone the repo onto the box to apply it. Send Sisto the PR link after it is open. Do not merge until a later explicit yes.
-4. **6246200 patch** only after step 2, with the backup-first step, a fresh `expectedLastEdit`, the complete-mapper rule, and Proof readback of the live modules. Because the Make change is backward-compatible with the current form (§3.7), it can be applied before the website PR is merged without breaking instant quotes or gate/pets write-through for visitors still on the live form. If lastEdit has moved since the Nov 8 backup, stop and re-read.
-5. After-ACCEPT questions (gate, pets, last cut; do not re-ask frequency or preferred day when those cells are already filled), ACCEPT go-live items 2–11, the offer-page / flow-server TEST app, and RingCentral campaign/templates stay out of scope until he says yes to those separately.
+**Required sequence for the live change:** first back up 6246200, then patch 6246200 live, then Proof reads the live modules back. **Only after that readback may the website PR be merged or deployed.**
 
-Until the after-ACCEPT step is live, new website leads will not have gate and pets collected automatically (the same collection-gap the Proof-passed plan already flagged).
+Why the site must not go first: if the new form went live on the current 6246200 config, module 2 would still write Access_Notes as `Gate:  in`, `service_day` would be collected on the form and then dropped (no `values.20`, and no preferred-day line on the owner email), and the owner email would still print blank "Gate width:  in" and "Pets secured: " lines. The Make patch is backward-compatible with the old form (§3.7), so it can go live first without breaking instant quotes or gate/pets write-through for visitors still on today's homepage.
+
+1. **Proof rechecks this revised plan.** No Make write, and no merge or deploy, on FIX, and none on PASS until step 2.
+2. **Sisto's OK**, in his own words, on making the Option B form and the 6246200 mapping change live. That is the only remaining question for him. An agent's say-so is not approval. Independently verify his typed turn. The 8:39 PM ET B pick is the direction, not this live-change yes. Do not block this step on card-on-file or add-ons questions; those stay as they are (§1.4, §7).
+3. **Back up live 6246200 first** (§3.1): full unsanitized scenario + every module, sha256 sidecars, and the current `lastEdit`.
+4. **Patch 6246200 live** with `module_config_set`, the complete mapper for each touched module (module 2 and module 4), and a fresh `expectedLastEdit` from a GET immediately before the patch. If lastEdit has moved, stop and re-read.
+5. **Proof reads the live modules back** against the pre-patch backup and this plan. Do not merge or deploy the website until this readback is a PASS.
+6. **Only after step 5:** merge or deploy the website PR (`index.html` edits in §2). Opening a PR with no merge and no deploy does not change the live site and may happen earlier; it still must not be merged or deployed before step 5. Do not put webhook URLs in the PR body. CloudAgent / PR only; do not clone the repo onto the box to apply it.
+7. After-accept questions (gate, pets, last cut; do not re-ask frequency or preferred day when those cells are already filled), ACCEPT go-live items 2–11, the offer-page / flow-server TEST app, and RingCentral campaign/templates stay out of scope. ACCEPT and those follow-up questions are **TEST only and are not built**; they are not turned on by this work.
+
+New website leads will not have gate and pets collected automatically until a later, separately approved step is built. Until then, the owner email uses the static sentence in §3.5 so Timmy can confirm them with the customer.
 
 ---
 
@@ -254,27 +293,11 @@ Until the after-ACCEPT step is live, new website leads will not have gate and pe
 
 ---
 
-## 7. Open questions (with sources)
+## 7. Settled for this patch, and the only remaining question for Sisto
 
-Sisto's 8:39 PM ET pick, as relayed by Proof, is specifically: keep yard size and frequency for the instant price, and add the Tue–Sat day. It does not mention the card-on-file checkbox or add-ons. Neither item is a standalone, verified Sisto yes for this form change. Until he answers, the PR draft should keep both, matching the Proof-passed Option B field list.
+The card-on-file checkbox and the optional add-ons are **not** open questions. Both stay exactly as they are on the live form, per Proof's 8:47 PM ET check and the Proof-passed Option B field list (two-question plan lines 217–220). Do not ask Sisto a keep-or-move question to leave them where they are, and do not block his yes on the live B change on either item.
 
-### (a) Under B, does the card-on-file checkbox stay on the form, or move after accept?
+- **Card-on-file:** the required checkbox stays on the form and in the payload. Module 4 keeps the "Agreed to card on file" line (§3.5).
+- **Add-ons:** the three optional checkboxes stay on the form and in the payload. They are currently **collected and then dropped** (no `values.12`, no owner-email line). Writing add-ons to Services column 12 and the owner email is **later cleanup, not part of this patch**, so the live change stays small. That cleanup is Lawns' to do later; it is not a question for Sisto in this apply plan.
 
-**Not fully settled as a form-field decision.** Sources:
-
-- **Keep, as the recommended Option B field list:** `/workspace/playbooks/lawns-website-two-question-plan-2026-11-10.md` lines 217–220 (Proof PASS 8:26 PM ET, sha `de5d2ad2…`) lists "Card-on-file agreement (current required checkbox)" among the fields to keep under Option B. That is the plan recommendation Proof passed, not a later separate yes from Sisto on this checkbox.
-- **Card-on-file belongs in the booking flow, but after the quote / at accept — not clearly "must stay on the quote form":** `/workspace/playbooks/lawns-booking-payment-playbook.md` lines 63 and 144 quote Sisto in Lawns chat, Nov 5, 2026, ~12:58 AM ET: "When a quote comes in, they get a text back with the amount… they can accept and pay for it or put their card on file to pay when it's done," and he picked "Send the payment link right away when they reply ACCEPT." The same playbook (line 147) says those words "do not by themselves establish every implementation detail (including requiring a card…)."
-- **Recommendation only, Nov 5 quote-to-paid note:** `/workspace/proof-notes/lawns-quote-to-paid-complete-flow-2026-11-05.md` line 72: "Require card on file for per-visit (no charge at accept)? Rec: yes." That is a rec, not a recorded Sisto form decision.
-- **Live site already treats card linking as after the quote:** `index.html` line 596 (How It Works step 2) and line 771 (FAQ: card collected during account setup). The live required checkbox is at lines 738–739 (`card_on_file_agreed`).
-
-**Recommendation for the PR draft:** keep the required checkbox on the form (Proof-passed Option B list). The Nov 5 words support collecting a card in the accept/pay path; they do not require moving the agreement off this form. Ask him to confirm.
-
-### (b) Do the add-ons stay on the form, or move after accept?
-
-**Not settled by a Nov 4–5 billing decision.** Sources:
-
-- **Keep, as the recommended Option B field list:** same two-question plan, line 217: "Keep Add-On Requests (optional) with the current three labels." Line 238 says the owner email may optionally include add-ons; lines 134 and 284 record the existing gap that `add_ons` is posted and never written to Services (column 12) or the owner email.
-- **Same three add-ons appear on the TEST offer-page account screen as "Quoted," with no prices:** `/workspace/playbooks/lawns-offer-from-package-prices-2026-11-07.md` line 74. That describes the frozen offer page, not a decision to keep or drop them on the public quote form.
-- No Nov 4–5 Sisto quote in the booking-payment playbook was found that says to collect (or not collect) aeration / shrub / cleanup on the website form.
-
-**Recommendation for the PR draft:** keep the optional add-ons on the form (Proof-passed Option B list). Ask whether to start writing them to Services (column 12) and the owner email so they are not collected and then dropped. Do not map column 12 in the Make patch until he says to.
+**The only remaining question for Sisto**, after this revised plan is rechecked, is whether to make the Option B form and the 6246200 mapping change live. That yes has to be in his own words and independently verified. An agent's say-so is not approval. The 8:39 PM ET B pick is the direction, not that live-change yes.
