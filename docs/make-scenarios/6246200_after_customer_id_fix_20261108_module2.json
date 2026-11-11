@@ -1,0 +1,88 @@
+{
+  "modules": [
+    {
+      "id": 2,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "LC-{{formatDate(now; \"YYMMDD-HHmmss\"; \"America/New_York\")}}",
+            "1": "{{formatDate(now; \"M/D/YYYY\"; \"America/New_York\")}}",
+            "2": "New Lead",
+            "3": "{{1.lead_data.first_name}}",
+            "4": "{{1.lead_data.last_name}}",
+            "5": "{{1.lead_data.phone}}",
+            "6": "{{1.lead_data.email}}",
+            "7": "{{1.lead_data.service_address}}",
+            "8": "{{1.lead_data.city}}",
+            "9": "{{1.lead_data.zip}}",
+            "10": "{{1.lead_data.lot_size}}",
+            "11": "{{1.lead_data.frequency}}",
+            "13": "{{if(6.zone = 3; emptystring; if(6.base > 0; sum(6.base; 6.trip); emptystring))}}",
+            "14": "{{if(6.zone = 3; emptystring; if(6.base > 0; round(sum(6.base; 6.trip) * switch(lower(replace(replace(trim(1.lead_data.frequency); \"-\"; \"\"); \" \"; \"\")); \"weekly\"; 4.33; \"biweekly\"; 2.17; \"monthly\"; 1; 0) * 100) / 100; emptystring))}}",
+            "15": "Gate: {{1.lead_data.gate_width_inches}} in",
+            "16": "{{if(1.lead_data.sms_consent; \"Yes\"; \"No\")}}",
+            "22": "Website Form"
+          },
+          "sheetId": "Customers",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        },
+        "restore": {
+          "expect": {
+            "from": {
+              "label": "My Drive"
+            },
+            "mode": {
+              "label": "Search by path"
+            },
+            "sheetId": {
+              "label": "Customers"
+            },
+            "spreadsheetId": {
+              "path": [
+                "Lawns By Timmy CRM"
+              ]
+            },
+            "includesHeaders": {
+              "label": "Yes"
+            },
+            "insertDataOption": {
+              "mode": "chose",
+              "label": "Insert rows"
+            },
+            "useColumnHeaders": {
+              "label": "No"
+            },
+            "valueInputOption": {
+              "mode": "chose",
+              "label": "User entered"
+            },
+            "insertUnformatted": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google"
+              },
+              "label": "Sisto's Google connection ([REDACTED_ACCOUNT_EMAIL])"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

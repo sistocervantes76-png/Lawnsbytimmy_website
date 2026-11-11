@@ -1,0 +1,679 @@
+{
+  "modules": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "hook": "REDACTED_HOOK_ID",
+          "maxResults": 1
+        },
+        "mapper": {},
+        "restore": {
+          "parameters": {
+            "hook": {
+              "data": {
+                "editable": "true"
+              },
+              "label": "LBT_Quote_Hook"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "util:SetVariables",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "variables": [
+            {
+              "name": "key",
+              "value": "{{lower(first(split(trim(1.lead_data.lot_size); \" \")))}}{{lower(replace(replace(trim(1.lead_data.frequency); \"-\"; \"\"); \" \"; \"\"))}}"
+            },
+            {
+              "name": "zip5",
+              "value": "{{if(length(trim(1.lead_data.zip)) >= 5; substring(trim(1.lead_data.zip); 0; 5); \"none\")}}"
+            },
+            {
+              "name": "summer",
+              "value": "{{if(parseNumber(formatDate(now; \"M\"; \"America/New_York\")) >= 5; if(parseNumber(formatDate(now; \"M\"; \"America/New_York\")) <= 9; 1; 0); 0)}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "module": "util:SetVariables",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "variables": [
+            {
+              "name": "base",
+              "value": "{{switch(5.key; \"smallbiweekly\"; 45; \"smallmonthly\"; if(5.summer = 1; 60; 50); \"mediumbiweekly\"; 50; \"mediummonthly\"; if(5.summer = 1; 75; 63); \"largebiweekly\"; 58; \"largemonthly\"; if(5.summer = 1; 87; 73); \"xlbiweekly\"; 70; \"xlmonthly\"; if(5.summer = 1; 105; 88); \"extrabiweekly\"; 70; \"extramonthly\"; if(5.summer = 1; 105; 88); 0)}}"
+            },
+            {
+              "name": "zone",
+              "value": "{{if(contains(\"33309,33311,33312,33315,33334\"; 5.zip5); 1; if(contains(\"33301,33304,33305,33306,33308,33313,33316\"; 5.zip5); 2; 3))}}"
+            },
+            {
+              "name": "trip",
+              "value": "{{if(contains(\"33301,33304,33305,33306,33308,33313,33316\"; 5.zip5); 10; 0)}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "LC-{{formatDate(now; \"YYMMDD-HHmm\"; \"America/New_York\")}}",
+            "1": "{{formatDate(now; \"M/D/YYYY\"; \"America/New_York\")}}",
+            "2": "New Lead",
+            "3": "{{1.lead_data.first_name}}",
+            "4": "{{1.lead_data.last_name}}",
+            "5": "{{1.lead_data.phone}}",
+            "6": "{{1.lead_data.email}}",
+            "7": "{{1.lead_data.service_address}}",
+            "8": "{{1.lead_data.city}}",
+            "9": "{{1.lead_data.zip}}",
+            "10": "{{1.lead_data.lot_size}}",
+            "11": "{{1.lead_data.frequency}}",
+            "13": "{{if(6.zone = 3; emptystring; if(6.base > 0; sum(6.base; 6.trip); emptystring))}}",
+            "14": "{{if(6.zone = 3; emptystring; if(6.base > 0; round(sum(6.base; 6.trip) * switch(lower(replace(replace(trim(1.lead_data.frequency); \"-\"; \"\"); \" \"; \"\")); \"weekly\"; 4.33; \"biweekly\"; 2.17; \"monthly\"; 1; 0) * 100) / 100; emptystring))}}",
+            "15": "Gate: {{1.lead_data.gate_width_inches}} in",
+            "16": "{{if(1.lead_data.sms_consent; \"Yes\"; \"No\")}}",
+            "22": "Website Form"
+          },
+          "sheetId": "Customers",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        },
+        "restore": {
+          "expect": {
+            "from": {
+              "label": "My Drive"
+            },
+            "mode": {
+              "label": "Search by path"
+            },
+            "sheetId": {
+              "label": "Customers"
+            },
+            "spreadsheetId": {
+              "path": [
+                "Lawns By Timmy CRM"
+              ]
+            },
+            "includesHeaders": {
+              "label": "Yes"
+            },
+            "insertDataOption": {
+              "mode": "chose",
+              "label": "Insert rows"
+            },
+            "useColumnHeaders": {
+              "label": "No"
+            },
+            "valueInputOption": {
+              "mode": "chose",
+              "label": "User entered"
+            },
+            "insertUnformatted": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google"
+              },
+              "label": "Sisto's Google connection ([REDACTED_ACCOUNT_EMAIL])"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "body": "{\"status\":\"success\",\"ok\":true,\"message\":\"Thank you! Check your email\"}",
+          "status": 200,
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>New website lead</strong></p>\r\n{{if(contains(1.lead_data.email; \"@\"); emptystring; \"<p><strong>NO EMAIL ON FORM.</strong> This customer did NOT get an email from us. Call or text them.</p>\")}}\r\n<p>Name: {{1.lead_data.first_name}} {{1.lead_data.last_name}}<br>\r\nPhone: {{1.lead_data.phone}}<br>\r\nOK to text: {{if(1.lead_data.sms_consent; \"Yes\"; \"No (call or email only)\")}}<br>\r\nEmail: {{1.lead_data.email}}<br>\r\nAddress: {{1.lead_data.service_address}}, {{1.lead_data.city}} {{1.lead_data.zip}}<br>\r\nLot size: {{1.lead_data.lot_size}}<br>\r\nFrequency: {{1.lead_data.frequency}}<br>\r\nGate width: {{1.lead_data.gate_width_inches}} in<br>\r\nPets secured: {{1.lead_data.pets_secured}}<br>\r\nAgreed to card on file: {{1.lead_data.card_on_file_agreed}}</p>\r\n<p><strong>Zone {{6.zone}}</strong>. Price quoted: ${{sum(6.base; 6.trip)}} per visit (trip fee ${{6.trip}}).<br>If Zone 3 or price shows $0, the customer got a \"we'll confirm your price\" message instead. Next: send them the price.</p>",
+          "subject": "New lead: {{1.lead_data.first_name}} {{1.lead_data.last_name}} - {{1.lead_data.city}}{{if(contains(1.lead_data.email; \"@\"); emptystring; \" (NO EMAIL - contact them)\")}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {}
+    },
+    {
+      "id": 3,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "{{1.lead_data.email}}"
+          ],
+          "content": "<p>Hi {{1.lead_data.first_name}},</p>\r\n<p>Thanks for your request for <strong>{{1.lead_data.service_address}}, {{1.lead_data.city}}</strong>.</p>\r\n<p style=\"font-size:18px\"><strong>Your price: ${{sum(6.base; 6.trip)}} per visit</strong> for {{lower(1.lead_data.frequency)}} mowing ({{1.lead_data.lot_size}}).</p>\r\n<p>This price is based on the yard size you picked. If your yard turns out bigger, we'll tell you the new price before the first mow. Nothing is charged until you say yes.</p>\r\n<p><strong>Next steps:</strong><br>1. Reply with 2 or 3 photos of your yard.<br>2. We'll confirm your first mow day.<br>3. We'll send a secure link to put a card on file before the first visit.</p>\r\n<p>Thank you,<br>Sisto<br>Lawns by Timmy<br><a href=\"https://lawnsbytimmy.com\">lawnsbytimmy.com</a></p>",
+          "subject": "Your Lawns by Timmy price, {{1.lead_data.first_name}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 22,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>The automatic price email to this customer failed to send.</strong> They have not heard from us yet. Please contact them directly.</p>\r\n<p><strong>Error:</strong> {{3.error.message}}</p>\r\n<p>Name: {{1.lead_data.first_name}} {{1.lead_data.last_name}}<br>\r\nPhone: {{1.lead_data.phone}}<br>\r\nEmail on form: {{1.lead_data.email}}<br>\r\nAddress: {{1.lead_data.service_address}}, {{1.lead_data.city}} {{1.lead_data.zip}}<br>\r\nLot size: {{1.lead_data.lot_size}}<br>\r\nFrequency: {{1.lead_data.frequency}}<br>\r\nQuoted price: ${{sum(6.base; 6.trip)}} per visit (Zone {{6.zone}}, trip fee ${{6.trip}})</p>\r\n<p>Common causes: blank or mistyped email on the form, or the Gmail connection in Make needs to be reconnected.</p>",
+          "subject": "ACTION NEEDED: price email did NOT reach {{1.lead_data.first_name}} {{1.lead_data.last_name}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 23,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "config": {}
+    },
+    {
+      "id": 7,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "{{1.lead_data.email}}"
+          ],
+          "content": "<p>Hi {{1.lead_data.first_name}},</p>\r\n<p>Thanks for your request for <strong>{{1.lead_data.service_address}}, {{1.lead_data.city}}</strong>.</p>\r\n<p>You're just outside our regular route, so we'll confirm your price within 1 business day.</p>\r\n<p><strong>Want it faster?</strong> Reply with 2 or 3 photos of your yard (front and back).</p>\r\n<p>Thank you,<br>Sisto<br>Lawns by Timmy<br><a href=\"https://lawnsbytimmy.com\">lawnsbytimmy.com</a></p>",
+          "subject": "Lawns by Timmy: we got your request, {{1.lead_data.first_name}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 24,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>The automatic \"we'll confirm your price\" email to this customer failed to send.</strong> They have not heard from us yet. Please contact them directly.</p>\r\n<p><strong>Error:</strong> {{7.error.message}}</p>\r\n<p>Name: {{1.lead_data.first_name}} {{1.lead_data.last_name}}<br>\r\nPhone: {{1.lead_data.phone}}<br>\r\nEmail on form: {{1.lead_data.email}}<br>\r\nAddress: {{1.lead_data.service_address}}, {{1.lead_data.city}} {{1.lead_data.zip}}<br>\r\nLot size: {{1.lead_data.lot_size}}<br>\r\nFrequency: {{1.lead_data.frequency}}<br>\r\nZone {{6.zone}} (no automatic price)</p>\r\n<p>Common causes: blank or mistyped email on the form, or the Gmail connection in Make needs to be reconnected.</p>",
+          "subject": "ACTION NEEDED: confirmation email did NOT reach {{1.lead_data.first_name}} {{1.lead_data.last_name}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 25,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "config": {}
+    },
+    {
+      "id": 9,
+      "module": "ringcentral:sendSMSMMS",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            {
+              "phoneNumber": "+{{if(length(replace(replace(replace(replace(replace(replace(1.lead_data.phone; \" \"; emptystring); \"-\"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring); \"+\"; emptystring)) = 10; \"1\"; emptystring)}}{{replace(replace(replace(replace(replace(replace(1.lead_data.phone; \" \"; emptystring); \"-\"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring); \"+\"; emptystring)}}"
+            }
+          ],
+          "text": "Hi {{1.lead_data.first_name}}, thanks for reaching out to Lawns by Timmy! Your price is ${{sum(6.base; 6.trip)}} per visit for {{lower(1.lead_data.frequency)}} mowing. {{if(contains(1.lead_data.email; \"@\"); \"Details are in your email. \"; emptystring)}}Reply with 2-3 photos of your yard to get started. Reply STOP to opt out.",
+          "phoneFrom": "+19548803500"
+        },
+        "restore": {
+          "expect": {
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "phoneFrom": {
+              "mode": "chose",
+              "label": "+19548803500"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "ringcentral"
+              },
+              "label": "Lawns by Timmy"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 26,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>The automatic price text to this customer failed to send.</strong> Their price email may still have gone out. Please text or call them from RingCentral.</p>\r\n<p><strong>Error:</strong> {{9.error.message}}</p>\r\n<p>Name: {{1.lead_data.first_name}} {{1.lead_data.last_name}}<br>\r\nPhone on form: {{1.lead_data.phone}}<br>\r\nEmail: {{1.lead_data.email}}<br>\r\nAddress: {{1.lead_data.service_address}}, {{1.lead_data.city}} {{1.lead_data.zip}}<br>\r\nQuoted price: ${{sum(6.base; 6.trip)}} per visit (Zone {{6.zone}})</p>\r\n<p>Common causes: phone number missing digits or mistyped, or the RingCentral connection in Make needs to be reconnected.</p>",
+          "subject": "ACTION NEEDED: price text did NOT reach {{1.lead_data.first_name}} {{1.lead_data.last_name}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 27,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "config": {}
+    },
+    {
+      "id": 10,
+      "module": "ringcentral:sendSMSMMS",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            {
+              "phoneNumber": "+{{if(length(replace(replace(replace(replace(replace(replace(1.lead_data.phone; \" \"; emptystring); \"-\"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring); \"+\"; emptystring)) = 10; \"1\"; emptystring)}}{{replace(replace(replace(replace(replace(replace(1.lead_data.phone; \" \"; emptystring); \"-\"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring); \"+\"; emptystring)}}"
+            }
+          ],
+          "text": "Hi {{1.lead_data.first_name}}, thanks for reaching out to Lawns by Timmy! We got your request and will confirm your price within 1 business day. Want it faster? Reply with 2-3 photos of your yard. Reply STOP to opt out.",
+          "phoneFrom": "+19548803500"
+        },
+        "restore": {
+          "expect": {
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "phoneFrom": {
+              "mode": "chose",
+              "label": "+19548803500"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "ringcentral"
+              },
+              "label": "Lawns by Timmy"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 28,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>The automatic \"we'll confirm your price\" text to this customer failed to send.</strong> Their email may still have gone out. Please text or call them from RingCentral.</p>\r\n<p><strong>Error:</strong> {{10.error.message}}</p>\r\n<p>Name: {{1.lead_data.first_name}} {{1.lead_data.last_name}}<br>\r\nPhone on form: {{1.lead_data.phone}}<br>\r\nEmail: {{1.lead_data.email}}<br>\r\nAddress: {{1.lead_data.service_address}}, {{1.lead_data.city}} {{1.lead_data.zip}}<br>\r\nZone {{6.zone}} (no automatic price)</p>\r\n<p>Common causes: phone number missing digits or mistyped, or the RingCentral connection in Make needs to be reconnected.</p>",
+          "subject": "ACTION NEEDED: confirmation text did NOT reach {{1.lead_data.first_name}} {{1.lead_data.last_name}}",
+          "bodyType": "rawHtml"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "Sisto's Gmail connection"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 29,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "config": {}
+    }
+  ]
+}
