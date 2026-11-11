@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lawns by Timmy — Get Your Quote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-bg: #f5ead8;
+  --color-surface: #ebddc5;
+  --color-text: #201e1d;
+  --color-accent: #c67139;
+  --color-accent-600: #b2622d;
+  --color-accent-700: #8c491a;
+  --color-accent-2: #7a8a5e;
+  --color-accent-2-100: #f0fae1;
+  --color-accent-2-200: #e1eecc;
+  --color-accent-2-700: #56633f;
+  --color-accent-100: #fff2eb;
+  --color-accent-200: #ffe1d0;
+  --color-neutral-100: #f9f4ed;
+  --color-neutral-700: #645c50;
+  --color-neutral-800: #474238;
+  --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+  --font-heading: "Caprasimo", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, sans-serif;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-heading); font-weight: 400; line-height: 1.12; margin: 0 0 8px; }
+a { color: var(--color-accent); }
+.phone {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 28px;
+}
+.topbar {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.logo-dot {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--color-accent-2); flex: none;
+}
+.brand { flex: 1; font-size: 13px; font-weight: 700; }
+.call-btn {
+  height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--color-divider); background: transparent;
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  color: var(--color-text); text-decoration: none;
+  display: inline-flex; align-items: center;
+}
+.screen { display: none; flex: 1; flex-direction: column; gap: 14px; }
+.screen.active { display: flex; }
+.offer-card {
+  background: var(--color-accent-2-700);
+  color: var(--color-neutral-100);
+  border-radius: var(--radius-lg);
+  padding: 22px 20px;
+  box-shadow: var(--shadow-lg);
+}
+.offer-kicker {
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--color-accent-2-200); margin-bottom: 8px;
+}
+.offer-card h1 { font-size: 30px; color: #fff; margin: 0 0 6px; }
+.offer-subline {
+  font-size: 15px; font-weight: 600; line-height: 1.35;
+  color: #fff; margin: 0 0 12px;
+}
+.offer-price {
+  font-family: var(--font-heading); font-size: 42px; line-height: 1;
+  margin: 10px 0 6px; color: #fff;
+}
+.offer-price.offer-price-secondary {
+  font-size: 26px; margin: 0 0 10px; opacity: .95;
+}
+.offer-price.offer-price-secondary .or-label {
+  font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  opacity: .85; margin-right: 4px;
+}
+.offer-price small { font-size: 16px; opacity: .85; }
+.offer-note { font-size: 13px; color: var(--color-accent-2-100); margin: 0; }
+[data-ship-block] {
+  /* Build must replace these before launch — invisible to customers */
+  font-size: 0; line-height: 0; color: transparent; display: inline-block; width: 0; height: 0; overflow: hidden;
+}
+.placeholder-tag {
+  display: inline-block; margin-top: 10px;
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(255,255,255,.15); color: #fff;
+  padding: 4px 8px; border-radius: 999px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip {
+  font-size: 12px; padding: 6px 10px; border-radius: 999px;
+  background: rgba(255,255,255,.12); color: #fff;
+}
+.panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  box-shadow: var(--shadow-md);
+}
+.panel h2 { font-size: 22px; }
+.muted { color: var(--color-neutral-700); font-size: 13px; margin: 0 0 12px; }
+.field { margin-bottom: 12px; }
+.field label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 48px; padding: 10px 14px;
+  font: inherit; font-size: 16px; color: var(--color-text);
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-divider); border-radius: 999px;
+}
+.input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.input.invalid { border-color: #a33; }
+.consent { font-size: 11px; color: var(--color-neutral-700); line-height: 1.4; margin: 4px 0 12px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none; border: 1px solid transparent;
+  font-family: var(--font-heading); font-size: 16px; line-height: 1.2;
+  padding: 14px 18px; border-radius: 999px; width: 100%;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); }
+.btn-primary:hover { background: var(--color-accent-600); }
+.btn-secondary {
+  background: transparent; border-color: var(--color-divider); color: var(--color-text);
+}
+.btn-ghost {
+  background: transparent; color: var(--color-accent); border: none;
+  font-family: var(--font-body); font-weight: 600; font-size: 14px;
+  padding: 10px; width: 100%;
+}
+.err {
+  display: none; background: #FDECEA; border: 1px solid #c0392b;
+  color: #7a1f13; padding: 12px 14px; border-radius: 14px; font-size: 13px;
+}
+.err.show { display: block; }
+.loading-row {
+  display: none; align-items: center; justify-content: center; gap: 10px;
+  font-size: 14px; color: var(--color-neutral-700); padding: 8px 0;
+}
+.loading-row.show { display: flex; }
+.spinner {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--color-divider); border-top-color: var(--color-accent);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.upsell {
+  border: 2px solid var(--color-accent);
+  background: var(--color-accent-100);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex; gap: 12px; align-items: flex-start;
+  cursor: pointer;
+}
+.upsell.selected { background: var(--color-accent-200); }
+.upsell input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--color-accent); }
+.upsell strong { display: block; font-size: 15px; }
+.upsell span { font-size: 13px; color: var(--color-neutral-800); }
+.price-line {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 15px; padding: 6px 0;
+}
+.price-line.total {
+  border-top: 1px solid var(--color-divider);
+  margin-top: 6px; padding-top: 12px;
+  font-family: var(--font-heading); font-size: 22px;
+}
+.card-mock {
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+.card-mock .row { display: grid; gap: 10px; margin-bottom: 10px; }
+.card-mock .row.split { grid-template-columns: 1fr 1fr; }
+.card-mock .fake {
+  background: #fff; border: 1px dashed #bbb; border-radius: 10px;
+  padding: 12px; font-size: 14px; color: #888;
+}
+.toggle-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; margin: 10px 0 4px;
+}
+.toggle-row input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--color-accent-2); }
+.success-badge {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--color-accent-2-200); color: var(--color-accent-2-700);
+  display: grid; place-items: center; margin: 8px auto 4px;
+  font-size: 28px;
+}
+.center { text-align: center; }
+.account-hero {
+  padding: 20px; border-radius: var(--radius-lg);
+  background: var(--color-accent-2-700); color: var(--color-neutral-100);
+}
+.account-hero .kicker {
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--color-accent-2-200);
+}
+.account-hero h2 { color: #fff; font-size: 28px; margin: 6px 0; }
+.account-actions { display: flex; gap: 8px; margin-top: 12px; }
+.account-actions .btn { font-size: 13px; padding: 10px; }
+.tabs {
+  display: flex; gap: 4px; margin-top: auto;
+  padding: 5px; border-radius: 999px; background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+.tab {
+  flex: 1; text-align: center; padding: 10px 0; border-radius: 999px;
+  font-size: 12px; font-weight: 600; border: none; background: transparent;
+  color: var(--color-neutral-800); cursor: pointer;
+}
+.tab.active { background: var(--color-accent); color: var(--color-bg); }
+.visit-row, .offer-row, .prop-row {
+  background: var(--color-neutral-100); border-radius: 20px; padding: 14px;
+  margin-bottom: 8px;
+}
+.season-banner {
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px 14px; border-radius: 48px 28px 28px 48px;
+  background: var(--color-accent-100); cursor: pointer;
+}
+.organic-note {
+  font-size: 13px; color: var(--color-neutral-800);
+  background: var(--color-accent-2-100); border-radius: 16px; padding: 12px 14px;
+}
+</style>
+<script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+<div class="phone">
+  <div class="topbar">
+    <div class="logo-dot" aria-hidden="true"></div>
+    <div class="brand">Lawns by Timmy</div>
+    <a class="call-btn" href="tel:+19548803500">Call</a>
+  </div>
+
+  <!-- STEP 1: OFFER + 3 FIELDS -->
+  <section id="screen-offer" class="screen active" data-step="offer">
+    <div class="offer-card">
+      <div class="offer-kicker">Oakland Park &amp; Fort Lauderdale</div>
+      <h1>Your first cut is $19</h1>
+      <p class="offer-subline" id="offerPackageLead">When you start the 4-visit bi-weekly package — $154 up front ($19 first, then 3 at $45).</p>
+      <div class="offer-price offer-price-secondary">
+        <small class="or-label">Or</small><span id="offerPriceDisplay">$45</span>
+        <small id="offerUnit"> / visit, bi-weekly</small>
+      </div>
+      <p class="offer-note">Small-yard bi-weekly mow. Your card can stay on file for future visits.</p>
+      <p class="offer-note" id="offerRecurringNote" style="margin:8px 0 0">For recurring bi-weekly service only — not one-time cuts. Package visits can't be split.</p>
+      <p class="offer-note" id="offerCatchupNote" style="margin:6px 0 0">Lawns not cut in over 10 days need a one-time catch-up service first, quoted separately. The $19 first-visit package rate does not replace catch-up.</p>
+      <p class="offer-note" id="offerYardNote" style="margin:6px 0 0">Small yard = up to 5,000 sq ft. Final price confirmed after a quick yard-size check.</p>
+      <p class="offer-note" id="offerTripNote" style="margin:6px 0 0">Some Fort Lauderdale ZIPs add a $10 trip fee to per-visit service.</p>
+      <div class="chips">
+        <span class="chip">Mow · edge · trim · blow</span>
+        <span class="chip">Card on file for bi-weekly visits</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Claim it in 30 seconds</h2>
+      <p class="muted">Three fields. Then pay — or get the quote by email.</p>
+      <form id="leadForm" novalidate>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input class="input" id="name" name="name" autocomplete="name" required placeholder="Full name">
+        </div>
+        <div class="field">
+          <label for="phone">Mobile phone</label>
+          <input class="input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="Mobile number">
+        </div>
+        <div class="field">
+          <label for="address">Service address (include ZIP)</label>
+          <input class="input" id="address" name="address" autocomplete="street-address" required placeholder="Street, city, ZIP">
+        </div>
+        <p class="consent">By tapping Get a Quote you agree Lawns by Timmy can email your quote and text booking updates and service alerts at this number. Msg &amp; data rates may apply. Reply STOP to opt out. Consent is not required to buy.</p>
+        <button type="submit" class="btn btn-primary" id="quoteBtn">Get a Quote</button>
+      </form>
+      <div class="loading-row" id="leadLoading"><div class="spinner"></div> Saving your spot…</div>
+      <div class="err" id="leadError">Something went wrong. Call <a href="tel:+19548803500">(954) 880-3500</a> and we'll get you a quote right away.</div>
+    </div>
+
+  </section>
+
+  <!-- STEP 2: PAY + UPSELL -->
+  <section id="screen-pay" class="screen" data-step="pay">
+    <div class="panel">
+      <h2>Lock in your first visit</h2>
+      <p class="muted" id="payHello">Hi — pay the offer below, or we'll email your quote.</p>
+
+      <div class="price-line" id="lineOfferRow" style="display:none"><span id="lineOfferLabel">$45 / visit, bi-weekly</span><strong id="lineOfferAmt">$45</strong></div>
+      <div class="price-line" id="lineUpsellRow"><span id="lineUpsellLabel">4-visit package · $19 first, then 3 at $45</span><strong id="lineUpsellAmt">$154</strong></div>
+      <div class="price-line total"><span>Due today</span><strong id="lineTotal">$154</strong></div>
+      <p class="muted" id="payRecurringNote" style="margin:8px 0 0;font-size:13px">For recurring bi-weekly service only. Package visits can't be split or used as one-time cuts.</p>
+      <p class="muted" id="payCancelNote" style="margin:6px 0 0;font-size:13px">If you cancel the package early, unused visits become account credit. No cash refunds.</p>
+      <p class="muted" id="payCatchupNote" style="margin:6px 0 0;font-size:13px">Lawns not cut in over 10 days need a one-time catch-up service first, quoted separately. The $19 first-visit package rate does not replace catch-up.</p>
+      <p class="muted" id="payYardNote" style="margin:6px 0 0;font-size:13px">Small yard = up to 5,000 sq ft. Final price confirmed after a quick yard-size check.</p>
+      <p class="muted" id="payTripNote" style="margin:6px 0 0;font-size:13px">Some Fort Lauderdale ZIPs add a $10 trip fee to per-visit service.</p>
+      <p class="muted" id="payAltNote" style="margin:8px 0 0;font-size:13px">Or uncheck the package below to pay $45 / visit instead.</p>
+
+      <label class="upsell selected" id="upsellCard" style="margin: 12px 0">
+        <input type="checkbox" id="upsellToggle" checked>
+        <div>
+          <strong id="upsellTitle">4 visits for $154</strong>
+          <span id="upsellDesc">First visit just $19, then 3 visits at $45. Save $26 vs $180.</span>
+          <span class="muted" id="upsellRecurringNote" style="display:block;margin-top:6px;font-size:12px">For recurring bi-weekly service only. The 4 visits are consecutive bi-weekly visits — they can't be split or used as one-time cuts.</span>
+          <span class="muted" id="upsellCancelNote" style="display:block;margin-top:6px;font-size:12px;border-top:1px dashed rgba(32,30,29,.25);padding-top:6px">If you cancel the package early, unused visits become account credit. No cash refunds.</span>
+        </div>
+      </label>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="saveCard" checked>
+        <span>Save my card for recurring visits (optional).</span>
+      </label>
+
+      <div id="stripeMount" style="margin: 12px 0">
+        <div id="payment-element"><!-- Stripe Payment Element --></div>
+        <div class="card-mock" id="cardMock" aria-label="Card payment form mock" style="display:none">
+          <div class="row"><div class="fake">Card number · · · · · · · · · · · ·</div></div>
+          <div class="row split">
+            <div class="fake">MM / YY</div>
+            <div class="fake">CVC</div>
+          </div>
+          <div class="row"><div class="fake">ZIP</div></div>
+          <p class="muted" style="margin:0">Loading secure card form…</p>
+        </div>
+        <p class="muted" id="stripeHint" style="margin:8px 0 0;font-size:12px;display:none"></p>
+      </div>
+
+      <button type="button" class="btn btn-primary" id="payBtn">Pay &amp; book first visit</button>
+      <button type="button" class="btn-ghost" id="textQuoteBtn">Not ready? We'll email your quote</button>
+      <div class="loading-row" id="payLoading"><div class="spinner"></div> Processing…</div>
+      <div class="err" id="payError">Payment didn't go through. Call <a href="tel:+19548803500">(954) 880-3500</a>.</div>
+    </div>
+  </section>
+
+  <!-- STEP 3: PAID -->
+  <section id="screen-paid" class="screen" data-step="paid">
+    <div class="panel center">
+      <div class="success-badge">✓</div>
+      <h2>You're booked</h2>
+      <p class="muted" id="paidBody">Payment received. Opening your account…</p>
+      <div class="price-line" style="justify-content:center;gap:8px"><span>Charged</span><strong id="paidAmt">—</strong></div>
+      <div class="price-line" style="justify-content:center;gap:8px"><span>Card</span><strong id="paidCard">••••</strong></div>
+      <button type="button" class="btn btn-primary" id="toAccountBtn" style="margin-top:16px">Open My Account</button>
+    </div>
+  </section>
+
+  <!-- STEP 3b: TEXT-ONLY FINISH -->
+  <section id="screen-done" class="screen" data-step="done">
+    <div class="panel center">
+      <div class="success-badge">✓</div>
+      <h2>You're in</h2>
+      <p class="muted">We'll follow up with your quote by email.</p>
+      <a class="btn btn-primary" href="https://calendar.app.google/cEtwcki68DJwSfv89" target="_blank" rel="noopener">Or book a free estimate</a>
+      <p class="muted" style="margin-top:14px">Questions? <a href="tel:+19548803500">(954) 880-3500</a></p>
+    </div>
+  </section>
+
+  <!-- STEP 4: ACCOUNT (mockup flow 2) -->
+  <section id="screen-account" class="screen" data-step="account">
+    <div id="acctHome">
+      <div class="account-hero">
+        <div class="kicker">Next visit</div>
+        <h2 id="acctNextDate">Scheduling soon</h2>
+        <p class="offer-note" id="acctHello">Welcome</p>
+        <div class="account-actions">
+          <button type="button" class="btn" style="background:#fff;color:var(--color-text)" id="skipBtn">Skip this visit</button>
+          <button type="button" class="btn" style="background:rgba(255,255,255,.92);color:var(--color-text);border:1px solid rgba(255,255,255,.6)" id="gateBtn">Gate &amp; access</button>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="muted">Your plan</div>
+        <div class="price-line"><span id="acctPlanName">Small-yard bi-weekly</span><strong id="acctPlanPrice">$45 / visit</strong></div>
+        <div class="price-line"><span id="acctBillingLabel">Card on file (optional)</span><span class="muted" id="acctCard">—</span></div>
+        <div class="price-line" id="acctAfterPackageRow" style="display:none;align-items:flex-start;gap:10px"><span id="acctAfterPackageLabel" style="flex:none;white-space:nowrap">After visit 4</span><span class="muted" id="acctAfterPackage" style="text-align:right">After your 4 visits: renew your 4-visit package for $139. Ask about rewards and seasonal offers.</span></div>
+        <div class="price-line"><span>Property</span><span class="muted" id="acctAddress">—</span></div>
+      </div>
+      <div class="season-banner" id="goOffers" style="margin-top:12px">
+        <div style="width:56px;height:56px;border-radius:50%;background:repeating-linear-gradient(135deg,var(--color-accent-200) 0 8px,var(--color-accent-100) 8px 16px);flex:none"></div>
+        <div>
+          <strong style="font-family:var(--font-heading);font-size:16px;color:var(--color-accent-700)">Seasonal offers</strong>
+          <div class="muted">See add-ons quoted for your property.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="acctVisits" style="display:none">
+      <h2>Visits &amp; receipts</h2>
+      <div class="visit-row">
+        <strong id="visit0Date">Upcoming</strong>
+        <div class="muted" id="visit0Note">First visit booked</div>
+        <div class="price-line"><span>Status</span><strong>Scheduled</strong></div>
+      </div>
+      <div class="visit-row">
+        <strong>Receipts</strong>
+        <div class="muted">After each visit you'll see photos and the charge to <span id="visitCard">your card</span>.</div>
+      </div>
+    </div>
+
+    <div id="acctOffers" style="display:none">
+      <h2>Seasonal offers</h2>
+      <p class="muted">Seasonal add-ons, quoted when you ask.</p>
+      <div class="offer-row"><strong>Shrub &amp; bed maintenance</strong> <span style="float:right">Quoted</span><div class="muted">Quoted for your property.</div></div>
+      <div class="offer-row"><strong>Seasonal property cleanup</strong> <span style="float:right">Quoted</span><div class="muted">Quoted for your property.</div></div>
+    </div>
+
+    <div id="acctProp" style="display:none">
+      <h2>Property &amp; billing</h2>
+      <div class="prop-row">
+        <div class="muted">Property</div>
+        <strong id="propName">—</strong>
+        <div class="muted" id="propAddress">—</div>
+      </div>
+      <div class="prop-row">
+        <div class="muted">Billing</div>
+        <div class="price-line"><span>Card on file</span><strong id="propCard">—</strong></div>
+        <div class="muted" id="propBillingNote">Package: visits 1–4 prepaid. Per-visit plan: charged after each completed visit.</div>
+      </div>
+      <div class="prop-row">
+        <div class="muted">Text alerts</div>
+        <div class="muted">Reply STOP to any text to opt out.</div>
+      </div>
+      <p class="muted">Questions? Call <a href="tel:+19548803500">(954) 880-3500</a> or email <a href="mailto:info@lawnsbytimmy.com">info@lawnsbytimmy.com</a></p>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="home">Home</button>
+      <button type="button" class="tab" data-tab="visits">Visits</button>
+      <button type="button" class="tab" data-tab="offers">Offers</button>
+      <button type="button" class="tab" data-tab="account">Account</button>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =============================================================================
+   CONFIG — replace placeholders before a live launch.
+   LEAD_WEBHOOK_URL is the real Make.com LBT_Quote hook from lawnsbytimmy.com.
+   Stripe keys and price IDs stay empty until Timmy provides TEST-mode values.
+   ============================================================================= */
+/* LBT_TEST_BUILD: set false (or strip TEST-only blocks) for production builds. */
+const LBT_TEST_BUILD = true;
+
+const CONFIG = {
+  // Make.com LBT_Quote webhook (used only when USE_REAL_WEBHOOK is true).
+  LEAD_WEBHOOK_URL: "[REDACTED_MAKE_WEBHOOK_URL]",
+  USE_REAL_WEBHOOK: false, // test copy: false; dist/ sets true
+  MOCK_LEAD_URL: "/mock/lead",
+  CREATE_SESSION_URL: "/api/create-payment-intent",
+  UPDATE_SESSION_URL: "/api/update-payment-intent",
+  CONFIG_URL: "/api/config",
+
+  // Loaded from /api/config (pk_test from secrets file) — never hardcode
+  STRIPE_PUBLISHABLE_KEY: "",
+
+  OFFER: {
+    id: "small_yard_biweekly",
+    label: "Small-yard bi-weekly mow",
+    amountLabel: "$45",
+    amountCents: 4500,
+    unit: " / visit, bi-weekly"
+  },
+  // Zone 2 per-visit (Sisto, Nov 7 2026): $45 + $10 trip fee = $55 in these ZIPs only.
+  // Package stays $154 everywhere. Same ZIP list as Make LBT_Quote (6246200) module 6.
+  OFFER_ZONE2: {
+    id: "small_yard_biweekly",
+    label: "Small-yard bi-weekly mow",
+    amountLabel: "$55",
+    amountCents: 5500,
+    unit: " / visit, bi-weekly"
+  },
+  ZONE2_ZIPS: ["33301", "33304", "33305", "33306", "33308", "33313", "33316"],
+  PACKAGE: {
+    id: "prepaid_4_visits",
+    title: "4 visits for $154",
+    desc: "First visit just $19, then 3 visits at $45. Save $26 vs $180.",
+    amountLabel: "$154",
+    amountCents: 15400,
+    stripePriceId: "price_REDACTED"
+  },
+  BOOKING_LINK: "https://calendar.app.google/cEtwcki68DJwSfv89",
+  PHONE: "(954) 880-3500"
+};
+
+const state = {
+  name: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  address: "",
+  city: "",
+  zip: "",
+  upsell: true,
+  saveCard: true,
+  paid: false,
+  last4: "",
+  planName: "4-visit bi-weekly package",
+  planPrice: CONFIG.PACKAGE.amountLabel,
+  clientSecret: null,
+  paymentIntentId: null,
+  crmCustomerId: null,
+  customerId: null,
+  paymentMethodId: null
+};
+
+let stripe = null;
+let elements = null;
+let paymentElement = null;
+let stripeReady = false;
+
+function $(id) { return document.getElementById(id); }
+
+function isTestMode() {
+  if (!LBT_TEST_BUILD) return false;
+  const host = location.hostname;
+  return new URLSearchParams(location.search).has("mock")
+    || host === "localhost"
+    || host === "127.0.0.1"
+    || host.endsWith(".trycloudflare.com");
+}
+
+function show(step) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.dataset.step === step));
+  window.scrollTo(0, 0);
+}
+
+function digits(s) { return String(s || "").replace(/\D/g, ""); }
+
+function splitName(full) {
+  const parts = String(full).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return { first: "", last: "" };
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+function parseAddress(raw) {
+  const text = String(raw).trim();
+  const zipM = text.match(/\b(\d{5})(?:-\d{4})?\b/);
+  const zip = zipM ? zipM[1] : "";
+  let city = "";
+  const cities = ["Oakland Park", "Fort Lauderdale"];
+  for (const c of cities) {
+    if (text.toLowerCase().includes(c.toLowerCase())) { city = c; break; }
+  }
+  return { service_address: text, city, zip };
+}
+
+function isZone2(zip) { return CONFIG.ZONE2_ZIPS.includes(String(zip || "").slice(0, 5)); }
+// Per-visit price for this customer's ZIP. Unknown / other ZIPs: $45.
+function perVisit() { return isZone2(state.zip) ? CONFIG.OFFER_ZONE2 : CONFIG.OFFER; }
+// "Save $X vs $Y": Y = 4 x per-visit price, X = Y - package. Arithmetic only.
+function packageDesc() {
+  const y = (perVisit().amountCents * 4) / 100;
+  const x = y - CONFIG.PACKAGE.amountCents / 100;
+  return "First visit just $19, then 3 visits at $45. Save $" + x + " vs $" + y + ".";
+}
+
+function dueLabel() {
+  if (state.upsell) return CONFIG.PACKAGE.amountLabel;
+  return perVisit().amountLabel;
+}
+
+function refreshPaySummary() {
+  const pv = perVisit();
+  $("lineOfferAmt").textContent = pv.amountLabel;
+  $("lineOfferLabel").textContent = pv.amountLabel + " / visit, bi-weekly";
+  $("offerPriceDisplay").textContent = pv.amountLabel;
+  if ($("upsellDesc")) $("upsellDesc").textContent = packageDesc();
+  if ($("lineOfferRow")) $("lineOfferRow").style.display = state.upsell ? "none" : "flex";
+  $("lineUpsellRow").style.display = state.upsell ? "flex" : "none";
+  if ($("lineUpsellLabel")) $("lineUpsellLabel").textContent = "4-visit package · $19 first, then 3 at $45";
+  $("lineUpsellAmt").textContent = CONFIG.PACKAGE.amountLabel;
+  $("lineTotal").textContent = dueLabel();
+  $("upsellCard").classList.toggle("selected", state.upsell);
+  if ($("upsellToggle")) $("upsellToggle").checked = !!state.upsell;
+  if ($("payCancelNote")) $("payCancelNote").style.display = state.upsell ? "block" : "none";
+  if ($("payAltNote")) {
+    $("payAltNote").style.display = "block";
+    $("payAltNote").textContent = state.upsell
+      ? "Or uncheck the package below to pay " + pv.amountLabel + " / visit instead."
+      : "Or check the package below for 4 visits at $154 ($19 first, then 3 at $45).";
+  }
+}
+
+function leadEndpoint() {
+  // TEST-only mock lead path — production builds set LBT_TEST_BUILD=false and strip MOCK_LEAD_URL usage.
+  if (LBT_TEST_BUILD && isTestMode()) return CONFIG.MOCK_LEAD_URL;
+  if (!CONFIG.USE_REAL_WEBHOOK) {
+    // Safe default: do not POST to Make until explicitly enabled on a live deploy.
+    return CONFIG.MOCK_LEAD_URL;
+  }
+  return CONFIG.LEAD_WEBHOOK_URL;
+}
+
+function buildLeadPayload() {
+  const n = splitName(state.name);
+  const addr = parseAddress(state.address);
+  return {
+    event: "lead_form_submitted",
+    timestamp: new Date().toISOString(),
+    source: "offer-page",
+    offer_id: CONFIG.OFFER.id,
+    lead_data: {
+      first_name: n.first,
+      last_name: n.last,
+      phone: state.phone,
+      sms_consent: true,
+      email: "",
+      lot_size: "Not sure",
+      service_address: addr.service_address,
+      city: addr.city,
+      zip: addr.zip,
+      gate_width_inches: null,
+      pets_secured: false,
+      frequency: "Bi-Weekly",
+      add_ons: [],
+      card_on_file_agreed: true,
+      source: "offer-page",
+      offer_id: CONFIG.OFFER.id
+    }
+  };
+}
+
+async function postLead() {
+  const payload = buildLeadPayload();
+  const res = await fetch(leadEndpoint(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error("lead_failed_" + res.status);
+  return payload;
+}
+
+function fillAccount() {
+  const first = state.firstName || "there";
+  $("acctHello").textContent = first ? `Hi ${first}.` : "Welcome.";
+  $("acctPlanName").textContent = state.planName;
+  $("acctPlanPrice").textContent = state.planPrice;
+  if (state.upsell) {
+    if ($("acctBillingLabel")) $("acctBillingLabel").textContent = "Visits 1–4 are prepaid.";
+    $("acctCard").textContent = state.last4 ? (`Visa •• ${state.last4}`) : "Prepaid";
+    if ($("acctAfterPackageRow")) $("acctAfterPackageRow").style.display = "flex";
+  } else {
+    if ($("acctBillingLabel")) $("acctBillingLabel").textContent = state.saveCard ? "Card on file for future visits" : "Card on file (optional)";
+    $("acctCard").textContent = state.last4 ? (`Visa •• ${state.last4}`) : "—";
+    if ($("acctAfterPackageRow")) $("acctAfterPackageRow").style.display = "none";
+  }
+  $("acctAddress").textContent = state.address || "—";
+  $("propName").textContent = state.name || "—";
+  $("propAddress").textContent = state.address || "—";
+  $("propCard").textContent = state.last4 ? `Visa •• ${state.last4}` : "—";
+  $("visit0Date").textContent = "First visit";
+  $("visit0Note").textContent = state.upsell ? "4-visit package started" : "Bi-weekly service booked";
+  $("visitCard").textContent = state.last4 ? `Visa •• ${state.last4}` : "your card";
+  $("payHello").textContent = `Hi ${first} — pay below, or we'll follow up with your quote by email.`;
+}
+
+function showAccountTab(tab) {
+  $("acctHome").style.display = tab === "home" ? "block" : "none";
+  $("acctVisits").style.display = tab === "visits" ? "block" : "none";
+  $("acctOffers").style.display = tab === "offers" ? "block" : "none";
+  $("acctProp").style.display = tab === "account" ? "block" : "none";
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+}
+
+async function loadStripeConfig() {
+  const res = await fetch(CONFIG.CONFIG_URL);
+  const data = await res.json();
+  const pk = data.publishableKey ? String(data.publishableKey) : "";
+  if (LBT_TEST_BUILD && isTestMode()) {
+    if (pk.startsWith("pk_test_")) CONFIG.STRIPE_PUBLISHABLE_KEY = pk;
+  } else if (pk.startsWith("pk_live_")) {
+    CONFIG.STRIPE_PUBLISHABLE_KEY = pk;
+  }
+  // Production must never accept pk_test_ when LBT_TEST_BUILD is false.
+  return data;
+}
+
+async function createPaymentSession() {
+  const res = await fetch(CONFIG.CREATE_SESSION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      metadata: { business: "lawns_by_timmy", ...(state.crmCustomerId ? { crm_customer_id: state.crmCustomerId } : {}) },
+      offer_id: state.upsell ? CONFIG.PACKAGE.id : CONFIG.OFFER.id,
+      save_card: state.saveCard,
+      zip: state.zip,
+      customer: {
+        name: state.name,
+        phone: state.phone,
+        address: state.address,
+        email: state.email || ""
+      },
+      upsell: state.upsell
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) return { error: data.error || ("http_" + res.status), mock: false };
+  return data;
+}
+
+async function updatePaymentSession() {
+  if (!state.paymentIntentId) return createPaymentSession();
+  const res = await fetch(CONFIG.UPDATE_SESSION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      payment_intent_id: state.paymentIntentId,
+      metadata: { business: "lawns_by_timmy", ...(state.crmCustomerId ? { crm_customer_id: state.crmCustomerId } : {}) },
+      offer_id: state.upsell ? CONFIG.PACKAGE.id : CONFIG.OFFER.id,
+      save_card: state.saveCard,
+      zip: state.zip,
+      upsell: state.upsell
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) return { error: data.error || ("http_" + res.status) };
+  return data;
+}
+
+async function mountPaymentElement(clientSecret) {
+  const pk = CONFIG.STRIPE_PUBLISHABLE_KEY || "";
+  const keyOk = LBT_TEST_BUILD ? pk.startsWith("pk_test_") : pk.startsWith("pk_live_");
+  if (!keyOk || typeof Stripe === "undefined") {
+    $("cardMock").style.display = "block";
+    $("stripeHint").style.display = "block";
+    $("stripeHint").textContent = "Payments unavailable right now. Call (954) 880-3500.";
+    return null;
+  }
+  $("cardMock").style.display = "none";
+  if (!stripe) stripe = Stripe(pk);
+  // Recreate elements when client secret changes
+  if (paymentElement) {
+    try { paymentElement.unmount(); } catch (_) {}
+    paymentElement = null;
+  }
+  elements = stripe.elements({
+    clientSecret,
+    appearance: {
+      theme: "stripe",
+      variables: {
+        colorPrimary: "#c67139",
+        colorBackground: "#f9f4ed",
+        colorText: "#201e1d",
+        borderRadius: "12px",
+        fontFamily: "Figtree, system-ui, sans-serif"
+      }
+    }
+  });
+  paymentElement = elements.create("payment", {
+    layout: { type: "tabs" },
+    wallets: { applePay: "never", googlePay: "never", link: "never" },
+    defaultValues: {
+      billingDetails: {
+        name: state.name || "",
+        phone: state.phone || "",
+        address: { postal_code: state.zip || "33334", country: "US" }
+      }
+    }
+  });
+  paymentElement.mount("#payment-element");
+  stripeReady = true;
+  if (isTestMode()) {
+    $("stripeHint").style.display = "block";
+    $("stripeHint").textContent = "Test mode — card 4242 4242 4242 4242 · exp 12/30 · CVC 123 · ZIP 33334.";
+  } else {
+    $("stripeHint").style.display = "none";
+    $("stripeHint").textContent = "";
+  }
+  return { stripe, elements };
+}
+
+async function preparePayScreen() {
+  await loadStripeConfig();
+  const session = await createPaymentSession();
+  if (session.error) throw new Error(session.error);
+  state.clientSecret = session.clientSecret;
+  state.paymentIntentId = session.payment_intent_id;
+  state.customerId = session.customer_id;
+  window.__LAST_SESSION = session;
+  await mountPaymentElement(session.clientSecret);
+  return session;
+}
+
+// ----- wire UI -----
+$("offerPriceDisplay").textContent = perVisit().amountLabel;
+$("offerUnit").textContent = CONFIG.OFFER.unit;
+$("upsellTitle").textContent = CONFIG.PACKAGE.title;
+$("upsellDesc").textContent = packageDesc();
+refreshPaySummary();
+
+$("leadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("leadError").classList.remove("show");
+  const name = $("name").value.trim();
+  const phone = $("phone").value.trim();
+  const address = $("address").value.trim();
+  let ok = true;
+  [$("name"), $("phone"), $("address")].forEach(el => el.classList.remove("invalid"));
+  if (!name) { $("name").classList.add("invalid"); ok = false; }
+  if (digits(phone).length !== 10) { $("phone").classList.add("invalid"); ok = false; }
+  if (!address || !/\d{5}/.test(address)) { $("address").classList.add("invalid"); ok = false; }
+  if (!ok) return;
+
+  const n = splitName(name);
+  const addr = parseAddress(address);
+  state.name = name;
+  state.firstName = n.first;
+  state.lastName = n.last;
+  state.phone = phone;
+  state.address = address;
+  state.city = addr.city;
+  state.zip = addr.zip;
+
+  $("quoteBtn").disabled = true;
+  $("leadLoading").classList.add("show");
+  try {
+    await postLead();
+    fillAccount();
+    refreshPaySummary();
+    show("pay");
+    await preparePayScreen();
+  } catch (err) {
+    console.error(err);
+    $("leadError").classList.add("show");
+  } finally {
+    $("quoteBtn").disabled = false;
+    $("leadLoading").classList.remove("show");
+  }
+});
+
+$("upsellToggle").addEventListener("change", async (e) => {
+  state.upsell = e.target.checked;
+  state.planName = state.upsell ? "4-visit bi-weekly package" : "Small-yard bi-weekly";
+  state.planPrice = state.upsell ? CONFIG.PACKAGE.amountLabel : (perVisit().amountLabel + " / visit");
+  refreshPaySummary();
+  if (state.paymentIntentId) {
+    try {
+      const session = await updatePaymentSession();
+      if (session.error) throw new Error(session.error);
+      state.clientSecret = session.clientSecret;
+      window.__LAST_SESSION = session;
+    } catch (err) { console.error("upsell_update", err); }
+  }
+});
+$("saveCard").addEventListener("change", async (e) => {
+  state.saveCard = e.target.checked;
+  if (state.paymentIntentId) {
+    try {
+      const session = await updatePaymentSession();
+      if (session.error) throw new Error(session.error);
+      state.clientSecret = session.clientSecret;
+      window.__LAST_SESSION = session;
+    } catch (err) { console.error("save_card_update", err); }
+  }
+});
+
+$("payBtn").addEventListener("click", async () => {
+  $("payError").classList.remove("show");
+  $("payBtn").disabled = true;
+  $("payLoading").classList.add("show");
+  try {
+    sessionStorage.setItem("lbt_state", JSON.stringify({
+      name: state.name, firstName: state.firstName, lastName: state.lastName,
+      phone: state.phone, address: state.address, city: state.city, zip: state.zip,
+      upsell: state.upsell, saveCard: state.saveCard,
+      planName: state.upsell ? "4-visit bi-weekly package" : "Small-yard bi-weekly",
+      planPrice: dueLabel() + (state.upsell ? "" : " / visit")
+    }));
+
+    if (!stripe || !elements || !state.clientSecret) {
+      await preparePayScreen();
+    }
+
+    const returnUrl = location.origin + (isTestMode() ? "/?mock=1&paid=1" : "/?paid=1");
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+      confirmParams: {
+        return_url: returnUrl
+      }
+    });
+
+    if (error) {
+      console.error("confirmPayment", error.type, error.code, error.message);
+      // Account/key mismatch surfaces as a confirm error — surface message
+      $("payError").textContent = error.message || "Payment didn't go through.";
+      $("payError").classList.add("show");
+      throw error;
+    }
+
+    const pi = paymentIntent;
+    if (!pi || (pi.status !== "succeeded" && pi.status !== "processing")) {
+      throw new Error("unexpected_pi_REDACTED_" + (pi && pi.status));
+    }
+
+    // Pull last4 + saved PM from our server (sk)
+    let status = {};
+    try {
+      const st = await fetch("/api/payment-status?payment_intent=" + encodeURIComponent(pi.id));
+      status = await st.json();
+    } catch (_) {}
+
+    state.paid = true;
+    state.last4 = status.last4 || (isTestMode() ? "4242" : "");
+    state.paymentIntentId = pi.id;
+    state.customerId = status.customer_id || state.customerId;
+    state.paymentMethodId = status.payment_method_id || null;
+    const brand = (status.brand || "visa");
+    const brandLabel = brand.charAt(0).toUpperCase() + brand.slice(1);
+    const amt = status.amount != null ? ("$" + (status.amount / 100).toFixed(2)) : dueLabel();
+    state.planPrice = amt + (state.upsell ? "" : " / visit");
+    $("paidAmt").textContent = amt;
+    $("paidCard").textContent = brandLabel + " •• " + state.last4;
+    $("paidBody").textContent = "Payment received. Your booking is confirmed.";
+    fillAccount();
+    $("acctCard").textContent = brandLabel + " •• " + state.last4;
+    $("propCard").textContent = brandLabel + " •• " + state.last4;
+    $("visitCard").textContent = brandLabel + " •• " + state.last4;
+    window.__LAST_SESSION = { ...(window.__LAST_SESSION || {}), ...status, status: pi.status, payment_intent_id: pi.id };
+    window.__LAST_PI = pi;
+    show("paid");
+  } catch (err) {
+    console.error(err);
+    if (!$("payError").classList.contains("show")) $("payError").classList.add("show");
+  } finally {
+    $("payBtn").disabled = false;
+    $("payLoading").classList.remove("show");
+  }
+});
+
+$("textQuoteBtn").addEventListener("click", () => show("done"));
+$("toAccountBtn").addEventListener("click", () => { fillAccount(); show("account"); showAccountTab("home"); });
+$("goOffers").addEventListener("click", () => showAccountTab("offers"));
+$("skipBtn").addEventListener("click", () => {
+  $("skipBtn").textContent = "Skipped";
+  $("acctNextDate").textContent = "Skipped — we'll reschedule";
+});
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => showAccountTab(t.dataset.tab));
+});
+
+// Deep-link helpers for screenshots / tests
+window.__LBT = {
+  CONFIG, state, show, showAccountTab, fillAccount, buildLeadPayload,
+  async gotoPay() { show("pay"); fillAccount(); refreshPaySummary(); },
+  async gotoPaid(last4) {
+    state.paid = true; state.last4 = last4 || (isTestMode() ? "4242" : "");
+    $("paidAmt").textContent = dueLabel();
+    $("paidCard").textContent = "Visa •• " + state.last4;
+    fillAccount(); show("paid");
+  },
+  async gotoAccount() { fillAccount(); show("account"); showAccountTab("home"); }
+};
+</script>
+</body>
+</html>

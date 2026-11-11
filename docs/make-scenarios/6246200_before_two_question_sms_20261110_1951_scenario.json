@@ -1,0 +1,342 @@
+{
+  "scenario": {
+    "id": 6246200,
+    "name": "LBT_Quote",
+    "teamId": "REDACTED_TEAM_ID",
+    "status": "active",
+    "isLockedForEditing": false,
+    "isWaitingOnIncompleteExecutions": false,
+    "incompleteExecutions": 0,
+    "lastEdit": "2026-11-08T23:04:55.154Z"
+  },
+  "trigger": {
+    "moduleId": 1,
+    "module": "gateway:CustomWebHook",
+    "kind": "webhook",
+    "scheduling": {
+      "type": "immediately",
+      "maximum_runs_per_minute": 100
+    }
+  },
+  "modules": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "root": "main"
+    },
+    {
+      "id": 5,
+      "module": "util:SetVariables",
+      "version": 1,
+      "follows": 1
+    },
+    {
+      "id": 6,
+      "module": "util:SetVariables",
+      "version": 1,
+      "follows": 5
+    },
+    {
+      "id": 2,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "follows": 6,
+      "filter": {
+        "name": "Real lead (has email or phone)",
+        "conditions": [
+          [
+            {
+              "a": "{{1.lead_data.email}}",
+              "b": "@",
+              "o": "text:contain"
+            }
+          ],
+          [
+            {
+              "a": "{{length(replace(replace(replace(replace(replace(replace(1.lead_data.phone; \" \"; emptystring); \"-\"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring); \"+\"; emptystring))}}",
+              "b": "10",
+              "o": "number:greaterorequal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "follows": 2
+    },
+    {
+      "id": 4,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "follows": 11
+    },
+    {
+      "id": 8,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "follows": 4
+    },
+    {
+      "id": 3,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 8,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "Has email + price (Zone 1 or 2)",
+        "conditions": [
+          [
+            {
+              "a": "{{6.zone}}",
+              "b": "3",
+              "o": "text:notequal"
+            },
+            {
+              "a": "{{6.base}}",
+              "b": "0",
+              "o": "number:greater"
+            },
+            {
+              "a": "{{1.lead_data.email}}",
+              "b": "@",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 3,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 23,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "follows": 22
+    },
+    {
+      "id": 7,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 8,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "Has email + no price (Zone 3 or unknown size)",
+        "conditions": [
+          [
+            {
+              "a": "{{6.zone}}",
+              "b": "3",
+              "o": "text:equal"
+            },
+            {
+              "a": "{{1.lead_data.email}}",
+              "b": "@",
+              "o": "text:contain"
+            }
+          ],
+          [
+            {
+              "a": "{{6.base}}",
+              "b": "0",
+              "o": "number:equal"
+            },
+            {
+              "a": "{{1.lead_data.email}}",
+              "b": "@",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 7,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 25,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "follows": 24
+    },
+    {
+      "id": 9,
+      "module": "ringcentral:sendSMSMMS",
+      "version": 1,
+      "parent": {
+        "moduleId": 8,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "Text OK + has price",
+        "conditions": [
+          [
+            {
+              "a": "{{1.lead_data.sms_consent}}",
+              "b": "true",
+              "o": "boolean:equal"
+            },
+            {
+              "a": "{{1.lead_data.phone}}",
+              "o": "exist"
+            },
+            {
+              "a": "{{6.zone}}",
+              "b": "3",
+              "o": "text:notequal"
+            },
+            {
+              "a": "{{6.base}}",
+              "b": "0",
+              "o": "number:greater"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 9,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 27,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "follows": 26
+    },
+    {
+      "id": 10,
+      "module": "ringcentral:sendSMSMMS",
+      "version": 1,
+      "parent": {
+        "moduleId": 8,
+        "kind": "route",
+        "index": 3
+      },
+      "filter": {
+        "name": "Text OK + no price",
+        "conditions": [
+          [
+            {
+              "a": "{{1.lead_data.sms_consent}}",
+              "b": "true",
+              "o": "boolean:equal"
+            },
+            {
+              "a": "{{1.lead_data.phone}}",
+              "o": "exist"
+            },
+            {
+              "a": "{{6.zone}}",
+              "b": "3",
+              "o": "text:equal"
+            }
+          ],
+          [
+            {
+              "a": "{{1.lead_data.sms_consent}}",
+              "b": "true",
+              "o": "boolean:equal"
+            },
+            {
+              "a": "{{1.lead_data.phone}}",
+              "o": "exist"
+            },
+            {
+              "a": "{{6.base}}",
+              "b": "0",
+              "o": "number:equal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 10,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 29,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "follows": 28
+    }
+  ],
+  "connections": [
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Google connection",
+      "app": "google",
+      "usedByModules": [
+        2
+      ],
+      "status": "ok"
+    },
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Gmail connection",
+      "app": "google-email",
+      "usedByModules": [
+        4,
+        22,
+        24,
+        26,
+        28
+      ],
+      "status": "ok"
+    },
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Gmail connection",
+      "app": "google-email",
+      "usedByModules": [
+        3,
+        7
+      ],
+      "status": "ok"
+    },
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Lawns by Timmy",
+      "app": "ringcentral",
+      "usedByModules": [
+        9,
+        10
+      ],
+      "status": "ok"
+    }
+  ]
+}

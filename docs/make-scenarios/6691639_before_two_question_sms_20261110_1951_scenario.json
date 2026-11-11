@@ -1,0 +1,839 @@
+{
+  "scenario": {
+    "id": 6691639,
+    "name": "LBT Text Replies + STOP",
+    "teamId": "REDACTED_TEAM_ID",
+    "status": "active",
+    "isLockedForEditing": false,
+    "isWaitingOnIncompleteExecutions": false,
+    "incompleteExecutions": 0,
+    "lastEdit": "2026-11-05T19:25:34.840Z"
+  },
+  "trigger": {
+    "moduleId": 1,
+    "module": "ringcentral:incomingMessages",
+    "kind": "webhook",
+    "scheduling": {
+      "type": "immediately"
+    }
+  },
+  "modules": [
+    {
+      "id": 1,
+      "module": "ringcentral:incomingMessages",
+      "version": 1,
+      "root": "main"
+    },
+    {
+      "id": 2,
+      "module": "util:SetVariables",
+      "version": 1,
+      "follows": 1,
+      "filter": {
+        "name": "Inbound text only",
+        "conditions": [
+          [
+            {
+              "a": "{{1.direction}}",
+              "b": "Inbound",
+              "o": "text:equal:ci"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "follows": 2
+    },
+    {
+      "id": 4,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "parent": {
+        "moduleId": 3,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "STOP",
+        "conditions": [
+          [
+            {
+              "a": "{{2.kind}}",
+              "b": "stop",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 4,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 12,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 11,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(4.error.type; 4.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 11,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(4.error.type; 4.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 13
+    },
+    {
+      "id": 15,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 11,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(4.error.type; 4.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(4.error.type; 4.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 15
+    },
+    {
+      "id": 5,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "follows": 4
+    },
+    {
+      "id": 17,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 5,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 18,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 17,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(5.error.type; 5.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 17,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(5.error.type; 5.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 19
+    },
+    {
+      "id": 21,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 17,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(5.error.type; 5.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(5.error.type; 5.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 21
+    },
+    {
+      "id": 6,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "parent": {
+        "moduleId": 3,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "START (opt back in)",
+        "conditions": [
+          [
+            {
+              "a": "{{2.kind}}",
+              "b": "start",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 6,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 24,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 23,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(6.error.type; 6.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 23,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(6.error.type; 6.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 25
+    },
+    {
+      "id": 27,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 23,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(6.error.type; 6.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(6.error.type; 6.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 27
+    },
+    {
+      "id": 7,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "follows": 6
+    },
+    {
+      "id": 29,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 7,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 30,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 29,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(7.error.type; 7.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 31,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 29,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(7.error.type; 7.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 32,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 31
+    },
+    {
+      "id": 33,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 29,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(7.error.type; 7.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(7.error.type; 7.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 34,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 33
+    },
+    {
+      "id": 9,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 3,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "Feedback rating (starts with 1-5)",
+        "conditions": [
+          [
+            {
+              "a": "{{2.kind}}",
+              "b": "rating",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 35,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 9,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 36,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 35,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(9.error.type; 9.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 37,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 35,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(9.error.type; 9.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 38,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 37
+    },
+    {
+      "id": 39,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 35,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(9.error.type; 9.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(9.error.type; 9.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 40,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 39
+    },
+    {
+      "id": 10,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "follows": 9
+    },
+    {
+      "id": 41,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 10,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 42,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 41,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(10.error.type; 10.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 43,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 41,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(10.error.type; 10.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 44,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 43
+    },
+    {
+      "id": 45,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 41,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(10.error.type; 10.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(10.error.type; 10.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 46,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 45
+    },
+    {
+      "id": 8,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 3,
+        "kind": "route",
+        "index": 3
+      },
+      "filter": {
+        "name": "Normal reply",
+        "conditions": [
+          [
+            {
+              "a": "{{2.kind}}",
+              "b": "reply",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 47,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parent": {
+        "moduleId": 8,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 48,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 47,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "1. Temporary hiccup - auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(8.error.type; 8.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 49,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 47,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "2. Needs a fix - log + hold to redo",
+        "conditions": [
+          [
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(8.error.type; 8.error.name); \"Unknown\")}},",
+              "o": "text:contain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 50,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 49
+    },
+    {
+      "id": 51,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parent": {
+        "moduleId": 47,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "3. Anything else - log + auto retry",
+        "conditions": [
+          [
+            {
+              "a": ",ConnectionError,RateLimitError,ModuleTimeoutError,OutOfSpaceError,",
+              "b": ",{{ifempty(ifempty(8.error.type; 8.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            },
+            {
+              "a": ",DataError,InvalidConfigurationError,InvalidAccessTokenError,AccountValidationError,BundleValidationError,IncompleteDataError,",
+              "b": ",{{ifempty(ifempty(8.error.type; 8.error.name); \"Unknown\")}},",
+              "o": "text:notcontain"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 52,
+      "module": "builtin:Break",
+      "version": 1,
+      "follows": 51
+    }
+  ],
+  "connections": [
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Google connection",
+      "app": "google",
+      "usedByModules": [
+        13,
+        15,
+        19,
+        21,
+        25,
+        27,
+        31,
+        33,
+        9,
+        37,
+        39,
+        43,
+        45,
+        49,
+        51
+      ],
+      "status": "ok"
+    },
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Gmail connection",
+      "app": "google-email",
+      "usedByModules": [
+        5,
+        7,
+        10,
+        8
+      ],
+      "status": "ok"
+    }
+  ]
+}

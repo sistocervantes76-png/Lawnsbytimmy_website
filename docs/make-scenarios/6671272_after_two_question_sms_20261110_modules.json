@@ -1,0 +1,296 @@
+{
+  "modules": [
+    {
+      "id": 3,
+      "module": "ringcentral:missedCall",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "__IMTHOOK__": "REDACTED_HOOK_ID"
+        },
+        "mapper": {},
+        "restore": {
+          "parameters": {
+            "__IMTHOOK__": {
+              "data": {
+                "editable": "false"
+              },
+              "label": "LBT Missed Call webhook"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "util:SetVariables",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "variables": [
+            {
+              "name": "digits",
+              "value": "{{replace(replace(replace(replace(replace(3.parties[1].from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring)}}"
+            },
+            {
+              "name": "num",
+              "value": "+{{if(length(replace(replace(replace(replace(replace(3.parties[1].from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring)) = 10; 1; emptystring)}}{{replace(replace(replace(replace(replace(3.parties[1].from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring)}}"
+            },
+            {
+              "name": "call_time",
+              "value": "{{formatDate(now; \"ddd M/D h:mm A\"; \"America/New_York\")}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 22,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "module": "datastore:GetRecord",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "datastore": "REDACTED_DATASTORE_ID"
+        },
+        "mapper": {
+          "key": "{{5.num}}",
+          "returnWrapped": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 4,
+      "module": "ringcentral:sendSMSMMS",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            {
+              "phoneNumber": "{{5.num}}"
+            }
+          ],
+          "text": "Hi, this is Timmy's assistant at Lawns by Timmy! Sorry we missed you. Reply with: 1) your address 2) what service you need. Reply STOP to opt out.",
+          "phoneFrom": "+19548803500"
+        },
+        "restore": {
+          "expect": {
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "phoneFrom": {
+              "mode": "chose",
+              "label": "+19548803500"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "ringcentral"
+              },
+              "label": "Lawns by Timmy"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 20,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>Someone called 954-880-3500 and the automatic text back did NOT go out.</strong> Call them back.</p>\r\n<p>Caller: {{5.num}}<br>\r\nTime: {{5.call_time}}</p>\r\n<p><strong>Error:</strong> {{4.error.message}}</p>\r\n<p>Common causes: the number is a landline, the caller opted out of texts, or the RingCentral connection in Make needs to be reconnected.</p>",
+          "subject": "ACTION NEEDED: missed call from {{5.num}} - auto-text FAILED",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "config": {}
+    },
+    {
+      "id": 7,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "datastore": "REDACTED_DATASTORE_ID"
+        },
+        "mapper": {
+          "key": "{{5.num}}",
+          "data": {
+            "opted_out": false,
+            "last_texted_at": "{{now}}"
+          },
+          "overwrite": true
+        }
+      }
+    },
+    {
+      "id": 8,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "MC-{{formatDate(now; \"YYMMDD-HHmm\"; \"America/New_York\")}}",
+            "1": "{{formatDate(now; \"M/D/YYYY\"; \"America/New_York\")}}",
+            "2": "New Lead",
+            "5": "{{5.num}}",
+            "16": "Reply only (called us)",
+            "22": "Missed Call",
+            "23": "Missed call {{5.call_time}}. Auto-text sent asking for address and what service they need."
+          },
+          "sheetId": "Customers",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        },
+        "restore": {
+          "expect": {
+            "from": {
+              "label": "My Drive"
+            },
+            "mode": {
+              "label": "Search by path"
+            },
+            "sheetId": {
+              "label": "Customers"
+            },
+            "spreadsheetId": {
+              "path": [
+                "Lawns By Timmy CRM"
+              ]
+            },
+            "includesHeaders": {
+              "label": "Yes"
+            },
+            "insertDataOption": {
+              "mode": "chose",
+              "label": "Insert rows"
+            },
+            "useColumnHeaders": {
+              "label": "No"
+            },
+            "valueInputOption": {
+              "mode": "chose",
+              "label": "User entered"
+            },
+            "insertUnformatted": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google"
+              },
+              "label": "Sisto's Google connection ([REDACTED_ACCOUNT_EMAIL])"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>Missed call on 954-880-3500</strong></p>\r\n<p>Caller: {{5.num}}<br>\r\nTime: {{5.call_time}}</p>\r\n<p>They were texted the quick-quote questions (address and what service they need).</p>\r\n<p>Added to the CRM sheet as a New Lead (source: Missed Call). Watch RingCentral for their reply, or call them back.</p>",
+          "subject": "Missed call: {{5.num}} - auto-text sent",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>{{5.num}} called again and you missed it.</strong></p>\r\n<p>Time: {{5.call_time}}</p>\r\n<p>No second text was sent (they already got one in the last 24 hours). Repeat callers are usually ready to book. Call them back.</p>",
+          "subject": "Called AGAIN: {{5.num}} - call them back",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>{{5.num}} called and you missed it.</strong></p>\r\n<p>Time: {{5.call_time}}</p>\r\n<p>No text was sent because this number replied STOP earlier. Call them back instead of texting.</p>",
+          "subject": "Missed call: {{5.num}} (opted out of texts - call only)",
+          "bodyType": "rawHtml"
+        }
+      }
+    }
+  ]
+}

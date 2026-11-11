@@ -1,0 +1,220 @@
+{
+  "scenario": {
+    "id": 6671272,
+    "name": "LBT Missed Call Text-Back",
+    "teamId": "REDACTED_TEAM_ID",
+    "status": "active",
+    "isLockedForEditing": false,
+    "isWaitingOnIncompleteExecutions": false,
+    "incompleteExecutions": 0,
+    "lastEdit": "2026-11-11T01:07:25.720Z"
+  },
+  "trigger": {
+    "moduleId": 3,
+    "module": "ringcentral:missedCall",
+    "kind": "webhook",
+    "scheduling": {
+      "type": "immediately",
+      "maximum_runs_per_minute": 100
+    }
+  },
+  "modules": [
+    {
+      "id": 3,
+      "module": "ringcentral:missedCall",
+      "version": 1,
+      "root": "main"
+    },
+    {
+      "id": 5,
+      "module": "util:SetVariables",
+      "version": 1,
+      "follows": 3,
+      "filter": {
+        "name": "Real caller number",
+        "conditions": [
+          [
+            {
+              "a": "{{length(replace(replace(replace(replace(replace(3.parties[1].from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring))}}",
+              "b": "10",
+              "o": "number:greaterorequal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "module": "builtin:Break",
+      "version": 1,
+      "parent": {
+        "moduleId": 5,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 6,
+      "module": "datastore:GetRecord",
+      "version": 1,
+      "follows": 5
+    },
+    {
+      "id": 12,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "follows": 6
+    },
+    {
+      "id": 4,
+      "module": "ringcentral:sendSMSMMS",
+      "version": 1,
+      "parent": {
+        "moduleId": 12,
+        "kind": "route",
+        "index": 0
+      },
+      "filter": {
+        "name": "Not opted out + not texted in last 24h",
+        "conditions": [
+          [
+            {
+              "a": "{{6.opted_out}}",
+              "b": "true",
+              "o": "text:notequal"
+            },
+            {
+              "a": "{{6.last_texted_at}}",
+              "o": "notexist"
+            }
+          ],
+          [
+            {
+              "a": "{{6.opted_out}}",
+              "b": "true",
+              "o": "text:notequal"
+            },
+            {
+              "a": "{{6.last_texted_at}}",
+              "b": "{{addHours(now; -24)}}",
+              "o": "date:less"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 4,
+        "kind": "errorHandler"
+      }
+    },
+    {
+      "id": 21,
+      "module": "builtin:Ignore",
+      "version": 1,
+      "follows": 20
+    },
+    {
+      "id": 7,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "follows": 4
+    },
+    {
+      "id": 8,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "follows": 7
+    },
+    {
+      "id": 9,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "follows": 8
+    },
+    {
+      "id": 10,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 12,
+        "kind": "route",
+        "index": 1
+      },
+      "filter": {
+        "name": "Called again within 24h (already texted)",
+        "conditions": [
+          [
+            {
+              "a": "{{6.opted_out}}",
+              "b": "true",
+              "o": "text:notequal"
+            },
+            {
+              "a": "{{6.last_texted_at}}",
+              "b": "{{addHours(now; -24)}}",
+              "o": "date:greaterorequal"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parent": {
+        "moduleId": 12,
+        "kind": "route",
+        "index": 2
+      },
+      "filter": {
+        "name": "Opted out",
+        "conditions": [
+          [
+            {
+              "a": "{{6.opted_out}}",
+              "b": "true",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Lawns by Timmy",
+      "app": "ringcentral",
+      "usedByModules": [
+        4
+      ],
+      "status": "ok"
+    },
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Gmail connection",
+      "app": "google-email",
+      "usedByModules": [
+        20,
+        9,
+        10,
+        11
+      ],
+      "status": "ok"
+    },
+    {
+      "id": "REDACTED_CONNECTION_ID",
+      "label": "Sisto's Google connection",
+      "app": "google",
+      "usedByModules": [
+        8
+      ],
+      "status": "ok"
+    }
+  ]
+}

@@ -1,0 +1,953 @@
+{
+  "modules": [
+    {
+      "id": 1,
+      "module": "ringcentral:incomingMessages",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "__IMTHOOK__": "REDACTED_HOOK_ID"
+        },
+        "mapper": {}
+      }
+    },
+    {
+      "id": 2,
+      "module": "util:SetVariables",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "variables": [
+            {
+              "name": "digits",
+              "value": "{{replace(replace(replace(replace(replace(replace(1.from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring)}}"
+            },
+            {
+              "name": "num",
+              "value": "+{{if(length(replace(replace(replace(replace(replace(replace(1.from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring)) = 10; \"1\"; emptystring)}}{{replace(replace(replace(replace(replace(replace(1.from.phoneNumber; \"+\"; emptystring); \"-\"; emptystring); \" \"; emptystring); \"(\"; emptystring); \")\"; emptystring); \".\"; emptystring)}}"
+            },
+            {
+              "name": "word",
+              "value": "{{lower(trim(replace(replace(replace(1.subject; \".\"; emptystring); \"!\"; emptystring); \",\"; emptystring)))}}"
+            },
+            {
+              "name": "kind",
+              "value": "{{switch(lower(trim(replace(replace(replace(1.subject; \".\"; emptystring); \"!\"; emptystring); \",\"; emptystring))); \"stop\"; \"stop\"; \"stopall\"; \"stop\"; \"stop all\"; \"stop\"; \"unsubscribe\"; \"stop\"; \"cancel\"; \"stop\"; \"end\"; \"stop\"; \"quit\"; \"stop\"; \"optout\"; \"stop\"; \"opt out\"; \"stop\"; \"revoke\"; \"stop\"; \"start\"; \"start\"; \"unstop\"; \"start\"; \"yes\"; \"start\"; if(length(trim(1.subject)) = 0; \"reply\"; if(contains(\"12345\"; substring(trim(1.subject); 0; 1)); \"rating\"; \"reply\")))}}"
+            },
+            {
+              "name": "when",
+              "value": "{{formatDate(now; \"ddd M/D h:mm A\"; \"America/New_York\")}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {}
+    },
+    {
+      "id": 4,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "datastore": "REDACTED_DATASTORE_ID"
+        },
+        "mapper": {
+          "key": "{{2.num}}",
+          "data": {
+            "opted_out": true,
+            "last_texted_at": "{{now}}"
+          },
+          "overwrite": true
+        }
+      }
+    },
+    {
+      "id": 11,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 12,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "STOP: save opt-out",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(4.error.type; 4.error.name); \"Unknown\")}}",
+            "6": "{{4.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 14,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 15,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "STOP: save opt-out",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(4.error.type; 4.error.name); \"Unknown\")}}",
+            "6": "{{4.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 16,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>{{2.num}} replied \"{{1.subject}}\"</strong> ({{2.when}}).</p>\r\n<p>The automatic missed-call text will not text this number again. Don't text them by hand either. Calling is still OK if they call you.</p>",
+          "subject": "Opted out of texts: {{2.num}}",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 18,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "STOP: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(5.error.type; 5.error.name); \"Unknown\")}}",
+            "6": "{{5.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 20,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 21,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "STOP: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(5.error.type; 5.error.name); \"Unknown\")}}",
+            "6": "{{5.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 22,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "config": {
+        "parameters": {
+          "datastore": "REDACTED_DATASTORE_ID"
+        },
+        "mapper": {
+          "key": "{{2.num}}",
+          "data": {
+            "opted_out": false,
+            "last_texted_at": "{{now}}"
+          },
+          "overwrite": true
+        }
+      }
+    },
+    {
+      "id": 23,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 24,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "START: save opt-in",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(6.error.type; 6.error.name); \"Unknown\")}}",
+            "6": "{{6.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 26,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 27,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "START: save opt-in",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(6.error.type; 6.error.name); \"Unknown\")}}",
+            "6": "{{6.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 28,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>{{2.num}} texted 954-880-3500:</strong></p>\r\n<p style=\"font-size:16px\">\"{{1.subject}}\"</p>\r\n<p>{{2.when}}. If they had opted out before, they're opted back in now. Reply from the RingCentral app.</p>",
+          "subject": "Text reply from {{2.num}}: \"{{1.subject}}\"",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 30,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 31,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "START: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(7.error.type; 7.error.name); \"Unknown\")}}",
+            "6": "{{7.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 32,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 33,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "START: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(7.error.type; 7.error.name); \"Unknown\")}}",
+            "6": "{{7.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 34,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "{{2.num}}",
+            "2": "{{substring(trim(1.subject); 0; 1)}}",
+            "3": "{{trim(substring(trim(1.subject); 1; length(trim(1.subject))))}}",
+            "4": "{{1.subject}}",
+            "5": "Text reply"
+          },
+          "sheetId": "Feedback",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 35,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 36,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 37,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "Rating: add to Feedback tab",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(9.error.type; 9.error.name); \"Unknown\")}}",
+            "6": "{{9.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 38,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 39,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "Rating: add to Feedback tab",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(9.error.type; 9.error.name); \"Unknown\")}}",
+            "6": "{{9.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 40,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>New feedback from {{2.num}}: {{substring(trim(1.subject); 0; 1)}} out of 5</strong></p>\r\n<p style=\"font-size:16px\">\"{{1.subject}}\"</p>\r\n<p>{{2.when}}. Saved to the Feedback tab in the CRM.</p>",
+          "subject": "Feedback: {{substring(trim(1.subject); 0; 1)}}/5 from {{2.num}}",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 41,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 42,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 43,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "Rating: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(10.error.type; 10.error.name); \"Unknown\")}}",
+            "6": "{{10.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 44,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 45,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "Rating: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(10.error.type; 10.error.name); \"Unknown\")}}",
+            "6": "{{10.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 46,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "to": [
+            "info@lawnsbytimmy.com"
+          ],
+          "content": "<p><strong>{{2.num}} texted 954-880-3500:</strong></p>\r\n<p style=\"font-size:16px\">\"{{1.subject}}\"</p>\r\n<p>{{2.when}}{{if(length(1.attachments) > 1; \". They sent a photo or file too, so check the RingCentral app.\"; emptystring)}}</p>\r\n<p>Reply from the RingCentral app.</p>",
+          "subject": "Text reply from {{2.num}}: \"{{substring(1.subject; 0; 60)}}\"",
+          "bodyType": "rawHtml"
+        }
+      }
+    },
+    {
+      "id": 47,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "config": {
+        "mapper": null
+      }
+    },
+    {
+      "id": 48,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    },
+    {
+      "id": 49,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "Reply: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(8.error.type; 8.error.name); \"Unknown\")}}",
+            "6": "{{8.error.message}}",
+            "7": "Held in Make > Incomplete executions. Fix the cause, then click Retry there.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 50,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "retry": false
+        }
+      }
+    },
+    {
+      "id": 51,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "config": {
+        "parameters": {
+          "__IMTCONN__": "REDACTED_CONNECTION_ID"
+        },
+        "mapper": {
+          "from": "drive",
+          "mode": "select",
+          "values": {
+            "0": "{{formatDate(now; \"M/D/YYYY h:mm A\"; \"America/New_York\")}}",
+            "1": "LBT Text Replies + STOP",
+            "2": "Reply: email alert",
+            "3": "{{2.num}}",
+            "4": "{{1.subject}}",
+            "5": "{{ifempty(ifempty(8.error.type; 8.error.name); \"Unknown\")}}",
+            "6": "{{8.error.message}}",
+            "7": "Make retries 3x, 15 min apart. If it still fails it waits in Incomplete executions to redo.",
+            "8": "No"
+          },
+          "sheetId": "Error Log",
+          "spreadsheetId": "/REDACTED_SPREADSHEET_ID",
+          "includesHeaders": true,
+          "insertDataOption": "INSERT_ROWS",
+          "useColumnHeaders": false,
+          "valueInputOption": "USER_ENTERED",
+          "insertUnformatted": false
+        }
+      }
+    },
+    {
+      "id": 52,
+      "module": "builtin:Break",
+      "version": 1,
+      "config": {
+        "parameters": {},
+        "mapper": {
+          "count": "3",
+          "retry": true,
+          "interval": "15"
+        }
+      }
+    }
+  ]
+}
