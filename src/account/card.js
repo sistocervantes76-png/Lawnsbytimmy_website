@@ -49,11 +49,12 @@ export function cardSaveMode(env) {
 }
 
 // Trade customers are never offered a card. "Contains trade" is case-insensitive,
-// so "Trade (storage space)" is included. Test-status rows are allowed here
-// because this build only runs when the mode is test.
+// so "Trade (storage space)" is included. When CARD_SAVE_MODE is test, only a
+// CRM row whose Status contains "Test" (any capitalization) may save a card.
 export function customerMaySaveCard(row) {
   if (!row || !/^LC-\d+$/.test(row.Customer_ID || "")) return false;
   if (/trade/i.test(row.Payment_Method || "")) return false;
+  if (!/test/i.test(String(row.Status || ""))) return false;
   return true;
 }
 

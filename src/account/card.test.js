@@ -8,6 +8,7 @@ import {
   CONSENT_TEMPLATE,
   consentMessage,
   consentVersion,
+  customerMaySaveCard,
   onConfirm,
   onRemove,
   onSetup,
@@ -44,7 +45,7 @@ function customerRow(overrides = {}) {
     Phone: "555-010-0199",
     Email: "",
     Payment_Method: "Cash",
-    Status: "Active",
+    Status: "Test",
     Price_Per_Visit: "45",
     Stripe_Customer_ID: "",
     Card_On_File: "",
@@ -377,6 +378,55 @@ describe("account card saving", { concurrency: false }, () => {
       assert.equal(paths.some((p) => p.startsWith("DELETE")), false);
     } finally {
       mock.restore();
+    }
+  });
+
+  test("test mode allows a card only when Status contains Test", async () => {
+    assert.equal(customerMaySaveCard(customerRow({ Status: "Test" })), true);
+    assert.equal(customerMaySaveCard(customerRow({ Status: "TEST customer" })), true);
+    assert.equal(customerMaySaveCard(customerRow({ Status: "Active" })), false);
+    assert.equal(customerMaySaveCard(customerRow({ Status: "Test", Payment_Method: "Trade (storage space)" })), false);
+
+    const blocked = mockBackend({
+      row: customerRow({ Status: "Active" }),
+      stripe() {
+        return jsonResponse({ error: { message: "stripe should not be called" } }, 500);
+      },
+    });
+    try {
+      const setup = await onSetup({ request: await signedRequest("/api/account/card/setup"), env: testEnv() });
+      assert.equal(setup.status, 404);
+      assert.equal(stripePaths(blocked.calls).length, 0);
+      const me = await onRequestGet({
+        request: await signedRequest("/api/account/me", { method: "GET" }),
+        env: testEnv(),
+      });
+      assert.equal((await me.json()).card_save_enabled, false);
+    } finally {
+      blocked.restore();
+    }
+
+    const allowed = mockBackend({
+      row: customerRow({ Status: "pre-TEST", Stripe_Customer_ID: "cus_test_lawns9001" }),
+      stripe(call) {
+        const url = new URL(call.url);
+        if (call.method === "GET" && url.pathname === "/v1/customers/cus_test_lawns9001") return lawnsCustomer();
+        if (call.method === "POST" && url.pathname === "/v1/checkout/sessions") {
+          return { body: { url: "https://checkout.stripe.com/c/pay/cs_test_status" } };
+        }
+        return jsonResponse({ error: { message: "unexpected " + url.pathname } }, 500);
+      },
+    });
+    try {
+      const setup = await onSetup({ request: await signedRequest("/api/account/card/setup"), env: testEnv() });
+      assert.equal(setup.status, 200);
+      const me = await onRequestGet({
+        request: await signedRequest("/api/account/me", { method: "GET" }),
+        env: testEnv(),
+      });
+      assert.equal((await me.json()).card_save_enabled, true);
+    } finally {
+      allowed.restore();
     }
   });
 
