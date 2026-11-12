@@ -9,4 +9,5 @@ node_modules
 src
 docs
 README.md
+CLAUDE.md
 wrangler.jsonc
