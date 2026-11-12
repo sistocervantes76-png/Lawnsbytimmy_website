@@ -33,7 +33,7 @@ Cloudflare dashboard → **Workers & Pages** → **lawnsbytimmy-website** → **
 | Name | Value |
 |---|---|
 | `SESSION_SECRET` | A long random string, at least 32 characters. Generate one at any password generator and **never share it**. |
-| `ACCOUNT_WEBHOOK_URL` | `https://hook.us2.make.com/oyic7ulfo2i8npn7i7xwvefvjqzbfmkb` |
+| `ACCOUNT_WEBHOOK_URL` | `<ACCOUNT_WEBHOOK_URL (set as a Worker secret)>` |
 | `ACCOUNT_WEBHOOK_KEY` | The shared key. It must match the key in the three filters of the Make scenario. |
 
 `STRIPE_SECRET_KEY` is no longer used; you can delete it.
