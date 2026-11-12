@@ -371,6 +371,63 @@
 
   small.hint { color: #777; font-size: 0.82rem; display: block; margin-top: 4px; }
 
+
+  /* ---------- Flow Audit (drainage & eco-restoration) ---------- */
+  .audit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .audit-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+  .audit-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #2b7ea1;
+    margin: 0 0 8px;
+  }
+  .audit-intro h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 12px; }
+  .audit-intro > p { color: #444; margin: 0 0 28px; }
+  .audit-steps { list-style: none; margin: 0; padding: 0; }
+  .audit-steps li {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 14px;
+    position: relative;
+    padding-bottom: 22px;
+  }
+  .audit-steps li:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    top: 38px;
+    bottom: 0;
+    width: 2px;
+    background: repeating-linear-gradient(#2b7ea1 0 6px, transparent 6px 12px);
+    opacity: 0.5;
+  }
+  .audit-steps .audit-num {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #EAF3EA;
+    border: 2px solid var(--gray-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+  .audit-steps li:last-child .audit-num { background: var(--emerald); border-color: var(--emerald); color: var(--white); }
+  .audit-steps h3 { margin: 6px 0 4px; font-size: 1.05rem; }
+  .audit-steps p { margin: 0; color: #555; font-size: 0.92rem; }
+  .audit-form-wrap { max-width: none; padding: 26px; }
+  .audit-form-wrap h3 { margin: 0 0 4px; font-size: 1.35rem; }
+  .audit-form-wrap > p { margin: 0 0 18px; color: #555; font-size: 0.92rem; }
+
   /* ---------- FAQ ---------- */
   .faq-wrap {
     max-width: 760px;
@@ -503,6 +560,7 @@
     <nav class="main-nav">
       <a href="#services">Services</a>
       <a href="#how-it-works">How It Works</a>
+      <a href="#flow-audit">Drainage</a>
       <a href="#faqs">FAQs</a>
     </nav>
     <a class="header-account" href="/account/">My Account</a>
@@ -757,6 +815,85 @@
     </div>
   </section>
 
+  <!-- FLOW AUDIT (drainage & eco-restoration) -->
+  <section class="alt-bg" id="flow-audit">
+    <div class="container audit-grid">
+      <div class="audit-intro">
+        <p class="audit-eyebrow">New: drainage &amp; eco-restoration</p>
+        <h2>Still a puddle two days after the storm? Let's fix it the natural way.</h2>
+        <p>Most soggy yards aren't a pipe problem. They're packed soil with nowhere for water to go. We bring the soil back to life with biochar and give rain a path with dry creek beds, bioswales and rain gardens. Planning a backyard homestead? Healthy soil and smart water are where that starts too.</p>
+        <ol class="audit-steps">
+          <li><span class="audit-num" aria-hidden="true">1</span><div><h3>You tell us what's happening</h3><p>Fill out the short form. Standing water by the patio, mud along the side yard, mulch washing into the street. A photo after the next rain helps a lot.</p></div></li>
+          <li><span class="audit-num" aria-hidden="true">2</span><div><h3>Sisto walks your yard</h3><p>Your free Erosion &amp; Water Flow Audit. We check how packed your soil is, find where the water comes from, and map where it wants to go.</p></div></li>
+          <li><span class="audit-num" aria-hidden="true">3</span><div><h3>You get a plain-English plan</h3><p>Clear options and a written quote. Sometimes it's just a soil topdressing. Sometimes it's a dry creek bed or rain garden that becomes the best spot in the yard.</p></div></li>
+          <li><span class="audit-num" aria-hidden="true">4</span><div><h3>We build it without tearing up your lawn</h3><p>No long trenches and no buried plastic pipe. River rock, native plants and living soil, installed by a local crew. Homestead projects get the same care: biochar-rich beds for vegetables and fruit trees, compost, and rain catchment that waters them.</p></div></li>
+          <li><span class="audit-num" aria-hidden="true">5</span><div><h3>The next afternoon downpour</h3><p>It still rains. The water flows down the creek bed, soaks into the rain garden or feeds your garden beds, and your lawn stays walkable.</p></div></li>
+        </ol>
+      </div>
+
+      <div class="form-wrap audit-form-wrap">
+        <h3>Book your free Flow Audit</h3>
+        <p>Tell us a little about your yard. Sisto or our team will reach out to schedule a visit.</p>
+        <form id="auditForm" novalidate>
+          <div class="form-row form-row-split">
+            <div>
+              <label for="audit_name">Name</label>
+              <input type="text" id="audit_name" name="name" required autocomplete="name">
+            </div>
+            <div>
+              <label for="audit_phone">Cell Phone</label>
+              <input type="tel" id="audit_phone" name="phone" required autocomplete="tel" placeholder="(954) 555-0123">
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="audit_email">Email</label>
+            <input type="email" id="audit_email" name="email" autocomplete="email">
+          </div>
+          <div class="form-row">
+            <label for="audit_address">Street address or neighborhood</label>
+            <input type="text" id="audit_address" name="address" required autocomplete="street-address" placeholder="e.g. Victoria Park, Fort Lauderdale">
+          </div>
+          <div class="form-row">
+            <fieldset>
+              <legend>What's going on? (pick any)</legend>
+              <div class="checkbox-group">
+                <div class="choice-row"><input type="checkbox" id="audit_issue_pooling" name="issues" value="Water pools after rain"><label for="audit_issue_pooling">Water pools after rain</label></div>
+                <div class="choice-row"><input type="checkbox" id="audit_issue_mud" name="issues" value="Muddy or bare spots"><label for="audit_issue_mud">Muddy or bare spots</label></div>
+                <div class="choice-row"><input type="checkbox" id="audit_issue_erosion" name="issues" value="Soil or mulch washing away"><label for="audit_issue_erosion">Soil or mulch washing away</label></div>
+                <div class="choice-row"><input type="checkbox" id="audit_issue_eco" name="issues" value="Wants an eco-friendly yard"><label for="audit_issue_eco">I want an eco-friendly yard</label></div>
+                <div class="choice-row"><input type="checkbox" id="audit_issue_homestead" name="issues" value="Backyard homestead project"><label for="audit_issue_homestead">Backyard homestead (food garden, fruit trees, rain capture)</label></div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="form-row">
+            <label for="audit_best_time">Best time to reach you</label>
+            <select id="audit_best_time" name="best_time">
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
+              <option value="Evening">Evening</option>
+              <option value="Text me">Text me</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="choice-row">
+              <input type="checkbox" id="audit_sms_consent" name="sms_consent">
+              <label for="audit_sms_consent">I agree to receive text messages from Lawns by Timmy at the number provided about my audit request, scheduling and service updates. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.</label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Request My Free Audit</button>
+
+          <div class="form-success" id="auditSuccess">
+            Thanks, we got it! We'll reach out to set up your Flow Audit. If you can, snap a photo of the yard after the next rain.
+          </div>
+          <div class="form-error" id="auditError">
+            Something went wrong sending your request. Please call or text us at <a href="tel:+19548803500">(954) 880-3500</a> and we'll set up your audit.
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- FAQ -->
   <section class="alt-bg" id="faqs">
     <div class="container">
@@ -898,6 +1035,69 @@
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = "Get My Instant Quote";
+    }
+  });
+
+  // ---------------------------------------------------------------
+  // FLOW AUDIT FORM: drainage / eco-restoration audit requests.
+  // These go to their OWN Make.com webhook, not the quote webhook above,
+  // so homeowners never get a mowing price email by mistake.
+  // Make scenario: LBT_Flow_Audit (see docs/webhook-setup.md).
+  // ---------------------------------------------------------------
+  const AUDIT_WEBHOOK_URL = "https://hook.us2.make.com/htowld73f9uv9fsbg81d1m5lfjobsgii";
+
+  const auditForm = document.getElementById('auditForm');
+  const auditSuccess = document.getElementById('auditSuccess');
+  const auditError = document.getElementById('auditError');
+
+  auditForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    auditSuccess.style.display = 'none';
+    auditError.style.display = 'none';
+
+    if (!auditForm.checkValidity()) {
+      auditForm.reportValidity();
+      return;
+    }
+
+    const data = new FormData(auditForm);
+    const payload = {
+      event: "flow_audit_requested",
+      timestamp: new Date().toISOString(),
+      audit_data: {
+        name: data.get('name') || "",
+        phone: data.get('phone') || "",
+        email: data.get('email') || "",
+        address: data.get('address') || "",
+        issues: data.getAll('issues'),
+        best_time: data.get('best_time') || "",
+        sms_consent: data.get('sms_consent') === 'on'
+      }
+    };
+
+    const submitBtn = auditForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
+
+    try {
+      if (!AUDIT_WEBHOOK_URL || AUDIT_WEBHOOK_URL === "REPLACE_WITH_AUDIT_WEBHOOK_URL") {
+        // Not connected yet: show the call/text message so no lead is silently lost.
+        throw new Error("AUDIT_WEBHOOK_URL is not set yet");
+      }
+      const res = await fetch(AUDIT_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Webhook responded " + res.status);
+      auditSuccess.style.display = 'block';
+      auditForm.reset();
+    } catch (err) {
+      console.error("Flow audit submission failed:", err);
+      auditError.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Request My Free Audit";
     }
   });
 </script>

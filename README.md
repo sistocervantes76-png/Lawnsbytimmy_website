@@ -12,6 +12,8 @@ It is one self-contained file — `index.html` — with all the design (CSS) and
 
 The "Get My Instant Quote" form is fully wired up to Timmy's Make.com automation. Every submission is sent there instantly. See `docs/webhook-setup.md` if you ever need to change where it points (e.g. you rebuild the Make scenario and get a new address).
 
+**Flow Audit form (drainage & eco-restoration): connected.** It posts to its own Make scenario, `LBT_Flow_Audit`, which adds each request to the CRM sheet as a New Lead (source "Flow Audit Form") and emails info@lawnsbytimmy.com. It never goes through the quote scenario. Details are at the bottom of `docs/webhook-setup.md`.
+
 ## Customer accounts (lawnsbytimmy.com/account)
 
 Customers sign in with their cell number and a 6-digit code texted from (954) 880-3500. They see their next visit, property details, balance, bills, recent visits, and can send requests (skip a visit, extra service, etc.). Everything comes from the "Lawns By Timmy CRM" sheet through the Make scenario `LBT_Customer_Account`. The behind-the-scenes code lives in `src/` and runs as the `lawnsbytimmy-website` Cloudflare Worker (configured in `wrangler.jsonc`). **Setup and secrets:** see `docs/customer-dashboard-setup.md`.
