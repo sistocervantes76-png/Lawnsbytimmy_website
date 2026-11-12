@@ -1,6 +1,7 @@
 {
   // Cloudflare Workers config for lawnsbytimmy.com.
-  // The static site is served from the repo root; src/worker.js only handles /api/account/*.
+  // The static site is served from the repo root. src/worker.js handles /api/account/*
+  // and the test-mode Stripe webhook at /api/stripe/lbt-webhook.
   "name": "lawnsbytimmy-website",
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
