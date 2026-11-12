@@ -1,6 +1,6 @@
 # Customer Dashboard (lawnsbytimmy.com/account): Setup
 
-Customers go to **lawnsbytimmy.com/account** (or click **My Account** in the site header), type their cell number, and get a 6-digit code by text from (954) 880-3500. No passwords, no email, no card needed. Once they're in, they see:
+Customers go to **lawnsbytimmy.com/account** (or click **My Account** in the site header), type their cell number, and get a 6-digit code by text from (954) 880-3500. No passwords and no email. Saving a card stays hidden until the Stripe test secrets in Step 1 are set. Once they're in, they see:
 
 - **Next visit:** the date from the CRM's Next_Service_Date, plus their schedule and services
 - **Their property:** address and gate/pet/access notes, from the CRM
@@ -8,6 +8,7 @@ Customers go to **lawnsbytimmy.com/account** (or click **My Account** in the sit
 - **Their bills:** the last 12 rows from the Invoices tab, marked Paid or Due
 - **Recent visits:** the last 6 completed jobs from the Jobs tab
 - **Need something?:** skip a visit, request an extra service, update access notes, or something else. The request lands on the CRM's Account Requests tab and emails info@lawnsbytimmy.com.
+- **Card on file (optional):** save, replace, or remove a card. Stripe test mode only, and hidden until the test secrets below are set. Nothing is charged when a card is saved.
 
 Only real customers can sign in: a row on the Customers tab with an ID like `LC-0001` and their cell number in the Phone column. Missed-call leads and test rows can't.
 
@@ -35,8 +36,13 @@ Cloudflare dashboard → **Workers & Pages** → **lawnsbytimmy-website** → **
 | `SESSION_SECRET` | A long random string, at least 32 characters. Generate one at any password generator and **never share it**. |
 | `ACCOUNT_WEBHOOK_URL` | `https://hook.us2.make.com/oyic7ulfo2i8npn7i7xwvefvjqzbfmkb` |
 | `ACCOUNT_WEBHOOK_KEY` | The shared key. It must match the key in the three filters of the Make scenario. |
+| `STRIPE_LBT_TEST_SECRET_KEY` | A Stripe **test** restricted key (`rk_test_…`). Customers: write. Checkout Sessions: write. SetupIntents: read. PaymentMethods: write, used only to detach a card. Never a live key, and never the old `STRIPE_SECRET_KEY` name. |
+| `STRIPE_LBT_WEBHOOK_SECRET` | The `whsec_…` signing secret for the Lawns **test** webhook endpoint (`checkout.session.completed` only). |
+| `CARD_SAVE_MODE` | Plain variable. Set to `test` to show the card button. Any other value, or leaving it unset, keeps card saving off (those routes answer 404). |
 
-`STRIPE_SECRET_KEY` is no longer used; you can delete it.
+`STRIPE_SECRET_KEY` is no longer used; you can delete it. Card saving does not read that name.
+
+Card saving stays off unless `STRIPE_LBT_TEST_SECRET_KEY`, `STRIPE_LBT_WEBHOOK_SECRET`, and `CARD_SAVE_MODE=test` are all set. It accepts only a test key (`rk_test_` or `sk_test_`). A live key is refused. The account page then shows **Save a card**, **Replace card**, and **Remove card**. Replace makes the new card the default and detaches the others. Remove detaches the card. The Worker posts `card_saved` or `card_removed` to the existing account webhook. Events that are not tagged `business=lawns_by_timmy` are ignored. No card number is stored on the site. The Make scenario does not handle those two actions until it is updated separately.
 
 ## Step 2: Make sure the site is served by the Worker
 

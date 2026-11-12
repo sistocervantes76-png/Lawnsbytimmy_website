@@ -109,6 +109,8 @@
   }
   .card-on-file strong { display: block; }
   .card-on-file span { color: var(--muted); font-size: 0.9rem; }
+  .card-consent { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
+  .card-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
   table.payments { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
   table.payments th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.82rem; padding: 0 8px 8px 0; border-bottom: 1px solid var(--gray-border); }
@@ -209,6 +211,24 @@
         <p class="sub">Payment is due when the visit is done.</p>
         <div class="balance" id="balanceValue">$0.00</div>
         <p class="pay-how" id="payHow"></p>
+      </div>
+
+      <div class="card span-2" id="cardOnFile" hidden>
+        <h2>Card on file</h2>
+        <div class="alert alert-ok" id="cardOk" hidden></div>
+        <div class="alert alert-err" id="cardErr" hidden></div>
+        <div class="card-on-file">
+          <div class="card-chip" id="cardChip">Card</div>
+          <div>
+            <strong id="cardTitle">No card saved</strong>
+            <span id="cardSub">Save a card so Timmy can charge it after each visit.</span>
+          </div>
+        </div>
+        <p class="card-consent" id="cardConsent" hidden></p>
+        <div class="card-actions">
+          <button class="btn btn-primary" id="saveCardBtn" type="button">Save a card</button>
+          <button class="btn btn-outline" id="removeCardBtn" type="button" hidden>Remove card</button>
+        </div>
       </div>
 
       <div class="card span-2">
@@ -352,7 +372,7 @@
     t.append(tb); return t;
   }
 
-  function renderDashboard(d) {
+  function renderDashboard(d, banner) {
     const p = d.property || {};
     text($("hello"), d.first_name ? `Hi, ${d.first_name}` : "Welcome back");
     text($("helloPhone"), fmtPhone(d.phone));
@@ -399,16 +419,64 @@
       "No visits on record yet."
     ));
 
+    renderCard(d, banner);
     show("loadingView", false); show("signinView", false);
     show("dashView"); show("logoutBtn");
     history.replaceState(null, "", "/account/");
   }
 
+  function renderCard(d, banner) {
+    if (!d.card_save_enabled) { show("cardOnFile", false); return; }
+    show("cardOnFile");
+    const saved = !!(d.card && d.card.saved && d.card.label);
+    text($("cardTitle"), saved ? `${d.card.label} saved` : "No card saved");
+    text($("cardSub"), saved
+      ? "Timmy can charge this card after each completed visit."
+      : "Save a card so Timmy can charge it after each visit.");
+    text($("cardChip"), saved ? d.card.label.split(" ")[0] : "Card");
+    text($("cardConsent"), d.consent_text || "");
+    show("cardConsent", !!d.consent_text);
+    text($("saveCardBtn"), saved ? "Replace card" : "Save a card");
+    show("removeCardBtn", saved);
+    const okBanner = banner && banner.kind === "ok";
+    const errBanner = banner && banner.kind === "err";
+    show("cardOk", !!okBanner);
+    show("cardErr", !!errBanner);
+    if (okBanner) text($("cardOk"), banner.text);
+    if (errBanner) text($("cardErr"), banner.text);
+  }
+
+  let pendingBanner = null;
+
   async function loadAccount() {
-    const { ok, status, data } = await api("/api/account/me");
-    if (ok && data.signed_in) return renderDashboard(data);
-    showSignin();
-    if (status >= 500) { text($("signinError"), data.error || "We couldn't load your account right now. Please call (954) 880-3500."); show("signinError"); }
+    const params = new URLSearchParams(location.search);
+    let { ok, status, data } = await api("/api/account/me");
+    if (!(ok && data.signed_in)) {
+      showSignin();
+      if (status >= 500) { text($("signinError"), data.error || "We couldn't load your account right now. Please call (954) 880-3500."); show("signinError"); }
+      return;
+    }
+    let banner = pendingBanner;
+    pendingBanner = null;
+    if (params.get("card") === "cancelled") {
+      banner = { kind: "ok", text: "No card was saved." };
+    } else if (params.get("card") === "saved") {
+      const cs = params.get("cs");
+      if (cs && data.card_save_enabled) {
+        const confirmed = await api("/api/account/card/confirm", { method: "POST", body: JSON.stringify({ cs }) });
+        if (confirmed.status === 401) return showSignin();
+        if (confirmed.ok) {
+          banner = { kind: "ok", text: "Card saved. Thank you!" };
+          const again = await api("/api/account/me");
+          if (again.ok && again.data.signed_in) data = again.data;
+        } else {
+          banner = { kind: "err", text: confirmed.data.error || "We couldn't confirm the saved card yet. If it went through, it will show here shortly." };
+        }
+      } else {
+        banner = { kind: "ok", text: "Card saved. Thank you!" };
+      }
+    }
+    renderDashboard(data, banner);
   }
 
   // requests form
@@ -438,6 +506,43 @@
   $("logoutBtn").addEventListener("click", async () => {
     await api("/api/account/logout", { method: "POST", body: "{}" });
     showSignin();
+  });
+
+  const REMOVE_CARD_QUESTION = "Remove your card? Timmy won't be able to charge it after visits. You can pay by cash, Zelle or Apple Pay instead.";
+
+  $("saveCardBtn").addEventListener("click", async () => {
+    const btn = $("saveCardBtn");
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Opening secure page…";
+    show("cardErr", false);
+    const { ok, status, data } = await api("/api/account/card/setup", { method: "POST", body: "{}" });
+    btn.disabled = false;
+    btn.textContent = label;
+    if (status === 401) return showSignin();
+    if (!ok || typeof data.url !== "string" || !/^https:\/\/checkout\.stripe\.com\//.test(data.url)) {
+      text($("cardErr"), (ok ? "" : data.error) || "We couldn't open the card page. Please try again.");
+      show("cardErr");
+      return;
+    }
+    location.href = data.url;
+  });
+
+  $("removeCardBtn").addEventListener("click", async () => {
+    if (!window.confirm(REMOVE_CARD_QUESTION)) return;
+    const btn = $("removeCardBtn");
+    btn.disabled = true;
+    show("cardErr", false);
+    const { ok, status, data } = await api("/api/account/card/remove", { method: "POST", body: "{}" });
+    btn.disabled = false;
+    if (status === 401) return showSignin();
+    if (!ok) {
+      text($("cardErr"), data.error || "We couldn't remove the card. Please try again.");
+      show("cardErr");
+      return;
+    }
+    pendingBanner = { kind: "ok", text: "Card removed." };
+    loadAccount();
   });
 
   // ---------- boot ----------

@@ -1,6 +1,7 @@
 // GET /api/account/me — everything the dashboard shows for the signed-in customer.
 // It all comes from the CRM sheet (Customers, Invoices and Jobs tabs), read through Make.com.
 import { json, getSession, readCrm, findCustomers, normalizePhone, PHONE } from "./lib.js";
+import { cardSaveMode, customerMaySaveCard, consentMessage, cardSummary } from "./card.js";
 
 const money = (v) => {
   const n = parseFloat(String(v || "").replace(/[^0-9.\-]/g, ""));
@@ -69,6 +70,8 @@ export async function onRequestGet({ request, env }) {
     const payMethods = ["Cash", "Apple Pay"];
     if (/zelle/i.test(c.Payment_Method || "")) payMethods.push("Zelle");
 
+    const cardSaveEnabled = cardSaveMode(env) === "test" && customerMaySaveCard(c);
+
     return json({
       signed_in: true,
       name: [c.First_Name, c.Last_Name].filter(Boolean).join(" "),
@@ -89,6 +92,9 @@ export async function onRequestGet({ request, env }) {
       visits: visits.slice(0, 6),
       pay_methods: payMethods,
       business_phone: PHONE,
+      card: cardSummary(c.Card_On_File),
+      card_save_enabled: cardSaveEnabled,
+      consent_text: cardSaveEnabled ? consentMessage(c.Price_Per_Visit) : "",
     });
   } catch (err) {
     console.error("me error: " + (err?.message || err), err?.stack);
