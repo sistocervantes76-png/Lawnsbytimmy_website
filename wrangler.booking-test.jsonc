@@ -1,0 +1,29 @@
+{
+  // Test Worker only. Do not deploy this file as lawnsbytimmy-website.
+  // Use: npx wrangler deploy -c wrangler.booking-test.jsonc
+  // The production config is wrangler.jsonc and does not include this binding.
+  "name": "lbt-booking-test",
+  "main": "src/booking-worker.js",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": true,
+  "keep_vars": true,
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  },
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "BOOKING_MODE": "test"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "SLOT_LEDGER", "class_name": "SlotLedger" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1-slot-ledger", "new_sqlite_classes": ["SlotLedger"] }
+  ]
+}

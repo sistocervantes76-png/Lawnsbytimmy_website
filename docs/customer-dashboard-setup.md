@@ -10,7 +10,7 @@ Customers go to **lawnsbytimmy.com/account** (or click **My Account** in the sit
 - **Need something?:** skip a visit, request an extra service, update access notes, or something else. The request lands on the CRM's Account Requests tab and emails info@lawnsbytimmy.com.
 - **Card on file (optional):** Not on yet. Stripe test mode only, on a separate test Worker.
 
-Only real customers can sign in: a row on the Customers tab with an ID like `LC-0001` and their cell number in the Phone column. Missed-call leads and test rows can't.
+Only real customers can sign in: a Customers-tab row whose ID is `LC-` plus digits (`LC-0001`) or a web lead (`LC-251120-143055`), and whose Phone column matches. Missed-call IDs (`MC-…`) are not accounts.
 
 ---
 

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Book a visit | Lawns by Timmy</title>
+<style>
+  :root {
+    --emerald: #2E7D32;
+    --emerald-dark: #1f5723;
+    --charcoal: #1A1A1A;
+    --white: #fff;
+    --amber: #F57C00;
+    --gray-bg: #F5F7F5;
+    --gray-border: #E0E4E0;
+    --muted: #4d564d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--charcoal);
+    background: var(--gray-bg);
+    line-height: 1.5;
+  }
+  a { color: var(--emerald-dark); }
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-border);
+  }
+  .bar {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo { font-weight: 800; color: var(--charcoal); text-decoration: none; font-size: 1.15rem; }
+  .call {
+    border: 1px solid var(--gray-border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    text-decoration: none;
+    font-weight: 700;
+    color: var(--charcoal);
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .offer {
+    background: var(--emerald-dark);
+    color: var(--white);
+    border: none;
+  }
+  .offer a { color: #fff; }
+  .kicker { letter-spacing: .08em; text-transform: uppercase; font-size: 12px; font-weight: 700; opacity: .8; margin: 0 0 6px; }
+  h1, h2 { line-height: 1.2; margin: 0 0 8px; }
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.35rem; }
+  p { margin: 0 0 10px; }
+  .note { color: var(--muted); font-size: .95rem; }
+  .offer .note { color: rgba(255,255,255,.88); }
+  label, legend { font-weight: 700; font-size: .92rem; }
+  .field { margin: 0 0 12px; }
+  input[type="text"], input[type="email"], input[type="tel"], select {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 4px;
+    padding: 10px 12px;
+    font: inherit;
+    border: 1px solid var(--gray-border);
+    border-radius: 10px;
+    background: var(--white);
+  }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 12px; }
+  .choice { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; font-weight: 500; }
+  .choice input { margin-top: 4px; }
+  .sms { font-weight: 500; font-size: .92rem; }
+  button, .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--amber);
+    color: var(--white);
+    font: inherit;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 12px 16px;
+  }
+  button.secondary, a.secondary {
+    background: var(--white);
+    color: var(--emerald-dark);
+    border: 1px solid var(--emerald);
+    margin-top: 8px;
+  }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .days { display: flex; flex-direction: column; gap: 12px; }
+  .day h3 { margin: 0 0 8px; font-size: 1rem; }
+  .windows { display: flex; flex-wrap: wrap; gap: 8px; }
+  .windows button { width: auto; background: var(--emerald); }
+  .windows button[aria-pressed="true"] { outline: 3px solid var(--amber); }
+  .price { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; }
+  .price.total { border-top: 1px solid var(--gray-border); margin-top: 6px; font-size: 1.2rem; font-weight: 800; }
+  .banner {
+    background: #fff6e8;
+    border: 1px solid #f0d3a6;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: .95rem;
+  }
+  .error {
+    background: #fdecea;
+    border: 1px solid #e7b2ab;
+    color: #7a1f13;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  .ok { font-size: 2rem; margin: 0; }
+  ul { margin: 8px 0 12px; padding-left: 18px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="logo" href="/">Lawns by Timmy</a>
+    <a class="call" href="tel:+19548803500">Call</a>
+  </div>
+</header>
+<main>
+  <section id="closed" class="card">
+    <h1>Booking isn't open yet.</h1>
+    <p>You can still request a quote and we'll price the yard with you.</p>
+    <p><a class="btn" href="/#quote-form">Get My Instant Quote</a></p>
+    <p class="note">Or call <a href="tel:+19548803500">(954) 880-3500</a>.</p>
+  </section>
+
+  <div id="app" hidden>
+    <p class="banner" id="testBanner">Test mode. This page cannot take a live payment.</p>
+    <div id="error" class="error" hidden role="alert"></div>
+
+    <section id="step-details">
+      <div class="card offer">
+        <p class="kicker">Oakland Park &amp; Fort Lauderdale</p>
+        <h1>Your first cut is <span id="firstCut">$19</span></h1>
+        <p>With the 4-visit bi-weekly package — <strong id="packagePrice">$154</strong> up front (<span id="firstCutInline">$19</span> first, then 3 at $45).</p>
+        <p>Or <strong id="visitPrice">$45</strong> / visit, bi-weekly. <span id="zone2Hint"></span></p>
+        <p class="note">Recurring bi-weekly service only, not a one-time cut. Some Fort Lauderdale ZIPs add a $10 trip fee to per-visit service. This price is for a grass area up to 5,000 sq ft.</p>
+      </div>
+      <form id="details" class="card">
+        <h2>Your details</h2>
+        <div class="split">
+          <div class="field">
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" autocomplete="given-name" required>
+          </div>
+          <div class="field">
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" autocomplete="family-name" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="phone">Mobile phone</label>
+          <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="address">Service address</label>
+          <input id="address" name="address" autocomplete="address-line1" required>
+        </div>
+        <div class="split">
+          <div class="field">
+            <label for="city">City</label>
+            <select id="city" name="city" required>
+              <option value="" selected>Select city</option>
+              <option>Oakland Park</option>
+              <option>Fort Lauderdale</option>
+              <option>Wilton Manors</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="zip">ZIP code</label>
+            <input id="zip" name="zip" inputmode="numeric" autocomplete="postal-code" pattern="[0-9]{5}" required>
+          </div>
+        </div>
+        <fieldset>
+          <legend>Is the grass area up to 5,000 sq ft?</legend>
+          <label class="choice"><input type="radio" name="yard" value="yes" required> Yes</label>
+          <label class="choice"><input type="radio" name="yard" value="no"> No, it's bigger</label>
+        </fieldset>
+        <fieldset>
+          <legend>How do you want to pay?</legend>
+          <label class="choice"><input type="radio" name="plan" value="package" checked> 4-visit package</label>
+          <label class="choice"><input type="radio" name="plan" value="per_visit"> Per visit</label>
+        </fieldset>
+        <label class="choice sms" for="sms_consent">
+          <input type="checkbox" id="sms_consent" name="sms_consent">
+          <span>I agree to receive text messages from Lawns by Timmy at the number provided: missed-call replies, quote and price follow-ups, appointment reminders and service updates, job-completion and billing notices, feedback requests, and account sign-in codes. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.</span>
+        </label>
+        <button type="submit">See available days</button>
+      </form>
+    </section>
+
+    <section id="step-quote" class="card" hidden>
+      <h2>This one needs a quote</h2>
+      <p id="quoteReason"></p>
+      <a class="btn" id="quoteLink" href="/#quote-form">Get My Instant Quote</a>
+      <a class="btn secondary" id="estimateLink" href="https://calendar.app.google/cEtwcki68DJwSfv89">Book a free estimate</a>
+      <button type="button" class="secondary" id="quoteBack">Back</button>
+    </section>
+
+    <section id="step-time" hidden>
+      <div class="card">
+        <h2>Pick a day and arrival window</h2>
+        <p class="note" id="proposal"></p>
+        <p class="note" id="seriesNote">Booking reserves four bi-weekly visits in the same window.</p>
+        <div id="days" class="days"></div>
+        <button type="button" id="continuePay" disabled>Continue to payment</button>
+        <button type="button" class="secondary" id="timeBack">Back</button>
+      </div>
+    </section>
+
+    <section id="step-pay" hidden>
+      <div class="card">
+        <h2>Pay and book</h2>
+        <fieldset>
+          <legend>Due today</legend>
+          <label class="choice"><input type="radio" name="pay_plan" value="package"> <span id="payPackageLabel">4-visit package</span></label>
+          <label class="choice"><input type="radio" name="pay_plan" value="per_visit"> <span id="payVisitLabel">Per visit</span></label>
+        </fieldset>
+        <div class="price total"><span>Due today</span><strong id="payDue"></strong></div>
+        <p class="note" id="holdNote"></p>
+        <ul id="visitList"></ul>
+        <label class="choice"><input type="checkbox" id="saveCard" checked> Save my card for future visits</label>
+        <div id="payment-element" style="margin: 12px 0"></div>
+        <button type="button" id="payBtn">Pay and book</button>
+        <button type="button" class="secondary" id="payBack">Pick a different time</button>
+      </div>
+    </section>
+
+    <section id="step-done" class="card" hidden>
+      <p class="ok" aria-hidden="true">✓</p>
+      <h2 id="doneTitle">You're booked</h2>
+      <p id="doneWhen"></p>
+      <p id="doneAmount"></p>
+      <p id="doneCard"></p>
+      <p id="doneNext"></p>
+      <ul id="doneVisits"></ul>
+      <a class="btn" href="/account/">Open my account</a>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { config: null, quote: null, slot: null, booking: null, stripe: null, elements: null };
+
+function money(cents) {
+  const amount = Number(cents);
+  if (!Number.isInteger(amount)) return "";
+  return amount % 100 === 0 ? `$${amount / 100}` : `$${(amount / 100).toFixed(2)}`;
+}
+
+function showError(message) {
+  const box = $("error");
+  box.hidden = !message;
+  box.textContent = message || "";
+}
+
+function showStep(name) {
+  for (const id of ["step-details", "step-quote", "step-time", "step-pay", "step-done"]) {
+    $(id).hidden = id !== name;
+  }
+  showError("");
+  window.scrollTo(0, 0);
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || "Something went wrong. Please try again.");
+    err.status = res.status;
+    err.body = data;
+    throw err;
+  }
+  return data;
+}
+
+function formFields() {
+  const data = new FormData($("details"));
+  return {
+    first_name: data.get("first_name"),
+    last_name: data.get("last_name"),
+    phone: data.get("phone"),
+    email: data.get("email"),
+    address: data.get("address"),
+    city: data.get("city"),
+    zip: data.get("zip"),
+    yard: data.get("yard"),
+    plan: selectedPlan(),
+    sms_consent: $("sms_consent").checked,
+  };
+}
+
+function selectedPlan() {
+  if (!$("step-pay").hidden) {
+    const picked = document.querySelector("input[name=pay_plan]:checked");
+    if (picked) return picked.value;
+  }
+  return new FormData($("details")).get("plan") || "package";
+}
+
+function setPlan(plan) {
+  for (const input of document.querySelectorAll("input[name=plan], input[name=pay_plan]")) {
+    input.checked = input.value === plan;
+  }
+}
+
+function fillOffer(config) {
+  $("firstCut").textContent = money(config.first_cut_cents);
+  $("firstCutInline").textContent = money(config.first_cut_cents);
+  $("packagePrice").textContent = money(config.package_cents);
+  $("visitPrice").textContent = money(config.visit_cents);
+  const labels = (config.windows || []).map((window) => window.label).join(" and ");
+  const proposal = config.windows_confirmed
+    ? `Arrival windows: ${labels}. Up to ${config.cap_per_window} visits in each. Book ${config.min_lead_days} to ${config.max_lead_days} days ahead, Tuesday through Saturday.`
+    : `These arrival windows are a proposal until Timmy confirms them: ${labels}. Up to ${config.cap_per_window} visits in each. Book ${config.min_lead_days} to ${config.max_lead_days} days ahead, Tuesday through Saturday.`;
+  $("proposal").textContent = proposal;
+  if (config.quote_url) $("quoteLink").href = config.quote_url;
+  if (String(config.estimate_url || "").startsWith("https://")) $("estimateLink").href = config.estimate_url;
+}
+
+async function loadStripe() {
+  if (state.stripe) return state.stripe;
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://js.stripe.com/v3/";
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("The card form didn't load. Please refresh."));
+    document.head.appendChild(script);
+  });
+  state.stripe = Stripe(state.config.publishableKey);
+  return state.stripe;
+}
+
+$("details").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  showError("");
+  const fields = formFields();
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    const quote = await api(`/api/book/quote?zip=${encodeURIComponent(fields.zip)}&yard=${encodeURIComponent(fields.yard)}&plan=${encodeURIComponent(fields.plan)}`);
+    state.quote = quote;
+    if (!quote.payable) {
+      $("quoteReason").textContent = quote.reason === "yard"
+        ? "This offer is for a grass area up to 5,000 sq ft. A bigger yard needs a quote instead of online payment."
+        : "That ZIP is outside the priced area for this offer. We'll quote it by hand instead of charging a card.";
+      showStep("step-quote");
+      return;
+    }
+    $("visitPrice").textContent = money(quote.per_visit_cents);
+    $("zone2Hint").textContent = quote.trip_fee ? `This ZIP is ${money(quote.per_visit_cents)} per visit, including the $10 trip fee. The package stays ${money(quote.package_cents)}.` : "";
+    const slots = await api(`/api/book/slots?zip=${encodeURIComponent(fields.zip)}`);
+    renderDays(slots.days || []);
+    showStep("step-time");
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+function renderDays(days) {
+  const root = $("days");
+  root.replaceChildren();
+  state.slot = null;
+  $("continuePay").disabled = true;
+  if (!days.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No arrival windows are open in that range. Please call us and we'll find a day.";
+    root.appendChild(empty);
+    return;
+  }
+  for (const day of days) {
+    const wrap = document.createElement("div");
+    wrap.className = "day";
+    const title = document.createElement("h3");
+    title.textContent = day.label;
+    wrap.appendChild(title);
+    const row = document.createElement("div");
+    row.className = "windows";
+    for (const window of day.windows || []) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `${window.label} · ${window.open} open`;
+      button.addEventListener("click", () => {
+        state.slot = { date: day.date, label: day.label, window };
+        for (const other of root.querySelectorAll("button")) other.setAttribute("aria-pressed", "false");
+        button.setAttribute("aria-pressed", "true");
+        $("continuePay").disabled = false;
+      });
+      row.appendChild(button);
+    }
+    wrap.appendChild(row);
+    root.appendChild(wrap);
+  }
+}
+
+$("continuePay").addEventListener("click", async () => {
+  if (!state.slot) return;
+  const button = $("continuePay");
+  button.disabled = true;
+  try {
+    const fields = formFields();
+    const body = {
+      ...fields,
+      date: state.slot.date,
+      window_id: state.slot.window.id,
+      save_card: $("saveCard").checked,
+    };
+    if (state.booking?.booking_id) body.replace_booking_id = state.booking.booking_id;
+    const booking = await api("/api/book/hold", { method: "POST", body: JSON.stringify(body) });
+    state.booking = booking;
+    showStep("step-pay");
+    await mountPayment(booking);
+  } catch (err) {
+    showError(err.body?.reason === "taken" ? err.message : err.message);
+    if (err.status === 409) {
+      const slots = await api(`/api/book/slots?zip=${encodeURIComponent(formFields().zip)}`).catch(() => null);
+      if (slots) renderDays(slots.days || []);
+    }
+  } finally {
+    button.disabled = false;
+  }
+});
+
+async function mountPayment(booking) {
+  const stripe = await loadStripe();
+  setPlan(booking.plan);
+  $("payPackageLabel").textContent = `4-visit package · ${money(state.quote?.package_cents || state.config.package_cents)}`;
+  $("payVisitLabel").textContent = `Per visit · ${money(state.quote?.per_visit_cents || state.config.visit_cents)}`;
+  $("payDue").textContent = money(booking.amount_cents);
+  $("holdNote").textContent = `This arrival window is held for ${state.config.hold_minutes} minutes: ${booking.label}, ${booking.window_label}.`;
+  const list = $("visitList");
+  list.replaceChildren();
+  for (const visit of booking.visits || []) {
+    const item = document.createElement("li");
+    item.textContent = `Visit ${visit.n}: ${visit.label} (${visit.date})`;
+    list.appendChild(item);
+  }
+  state.elements = stripe.elements({ clientSecret: booking.client_secret });
+  const payment = state.elements.create("payment");
+  $("payment-element").replaceChildren();
+  payment.mount("#payment-element");
+}
+
+$("saveCard").addEventListener("change", refreshPayment);
+for (const input of document.querySelectorAll("input[name=pay_plan]")) input.addEventListener("change", refreshPayment);
+
+let refreshing = false;
+async function refreshPayment() {
+  if (refreshing || !state.booking?.booking_id || $("step-pay").hidden) return;
+  refreshing = true;
+  const plan = selectedPlan();
+  try {
+    const updated = await api("/api/book/update", {
+      method: "POST",
+      body: JSON.stringify({
+        booking_id: state.booking.booking_id,
+        plan,
+        save_card: $("saveCard").checked,
+      }),
+    });
+    state.booking.amount_cents = updated.amount_cents;
+    state.booking.plan = updated.plan;
+    if (updated.client_secret) state.booking.client_secret = updated.client_secret;
+    $("saveCard").checked = !!updated.save_card;
+    setPlan(updated.plan);
+    $("payDue").textContent = money(updated.amount_cents);
+    if (state.elements?.fetchUpdates) await state.elements.fetchUpdates();
+  } catch (err) {
+    setPlan(state.booking.plan);
+    showError(err.message);
+  } finally {
+    refreshing = false;
+  }
+}
+
+$("payBtn").addEventListener("click", async () => {
+  const button = $("payBtn");
+  button.disabled = true;
+  showError("");
+  try {
+    const stripe = await loadStripe();
+    const result = await stripe.confirmPayment({
+      elements: state.elements,
+      confirmParams: { return_url: `${location.origin}/book/?booking_id=${encodeURIComponent(state.booking.booking_id)}` },
+      redirect: "if_required",
+    });
+    if (result.error) throw new Error(result.error.message || "Payment didn't go through.");
+    await pollStatus(state.booking.booking_id);
+  } catch (err) {
+    showError(err.message);
+    button.disabled = false;
+  }
+});
+
+async function pollStatus(bookingId) {
+  showStep("step-done");
+  $("doneTitle").textContent = "Saving your booking…";
+  $("doneWhen").textContent = "";
+  $("doneAmount").textContent = "";
+  $("doneCard").textContent = "";
+  $("doneNext").textContent = "";
+  $("doneVisits").replaceChildren();
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const res = await fetch(`/api/book/status?booking_id=${encodeURIComponent(bookingId)}`);
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 503) {
+      await wait(1500);
+      continue;
+    }
+    if (!res.ok) throw new Error(data.error || "We couldn't load the confirmation.");
+    if (data.status === "confirmed") return renderDone(data);
+    await wait(1500);
+  }
+  $("doneTitle").textContent = "Payment received";
+  $("doneNext").textContent = "We're still saving the booking. Refresh this page in a moment.";
+}
+
+function renderDone(data) {
+  $("doneTitle").textContent = data.needs_reschedule ? "Payment received" : "You're booked";
+  $("doneWhen").textContent = `${data.label} · ${data.window_label}`;
+  $("doneAmount").textContent = `Amount ${money(data.amount_cents)}`;
+  $("doneCard").textContent = data.card_last4
+    ? `Card ${data.card_brand ? data.card_brand + " " : ""}•••• ${data.card_last4}`
+    : "Card charged";
+  $("doneNext").textContent = data.needs_reschedule
+    ? "Your payment went through, and that window filled while the card was processing. We'll contact you to set a new arrival time."
+    : "A confirmation email is sent from the test setup. You can open your account any time.";
+  const list = $("doneVisits");
+  list.replaceChildren();
+  for (const visit of data.visits || []) {
+    const item = document.createElement("li");
+    item.textContent = `Visit ${visit.n}: ${visit.label} (${visit.date})`;
+    list.appendChild(item);
+  }
+}
+
+function wait(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+$("quoteBack").addEventListener("click", () => showStep("step-details"));
+$("timeBack").addEventListener("click", () => showStep("step-details"));
+$("payBack").addEventListener("click", () => showStep("step-time"));
+
+async function init() {
+  let config;
+  try {
+    config = await api("/api/book/config");
+  } catch {
+    return;
+  }
+  if (!config.enabled || !config.publishableKey) return;
+  state.config = config;
+  fillOffer(config);
+  $("closed").hidden = true;
+  $("app").hidden = false;
+  const params = new URLSearchParams(location.search);
+  const bookingId = params.get("booking_id");
+  if (bookingId && params.get("redirect_status") === "succeeded") {
+    try {
+      await pollStatus(bookingId);
+    } catch (err) {
+      showStep("step-details");
+      showError(err.message);
+    }
+  }
+}
+
+init();
+</script>
+</body>
+</html>
