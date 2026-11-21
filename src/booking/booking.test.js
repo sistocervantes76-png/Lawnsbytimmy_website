@@ -483,6 +483,36 @@ describe("booking_paid contract", () => {
     }
   });
 
+  test("switching plans uses the yard saved on the hold", async () => {
+    const env = testEnv();
+    const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+    await env.SLOT_LEDGER_TEST.hold(holdInput("BK-aabbccddeeff0011", slot, { yard: "no" }));
+    await env.SLOT_LEDGER_TEST.attachPayment("BK-aabbccddeeff0011", {
+      paymentIntentId: "pi_test_yard",
+      stripeCustomerId: "cus_test_yard",
+    });
+    const mock = installFetch(() => {
+      throw new Error("should not reprice a yard that is too big");
+    });
+    try {
+      const res = await onUpdate({
+        request: new Request("https://book.test/api/book/update", {
+          method: "POST",
+          headers: { Origin: "https://book.test" },
+          body: JSON.stringify({ booking_id: "BK-aabbccddeeff0011", plan: "per_visit" }),
+        }),
+        env,
+      });
+      assert.equal(res.status, 409);
+      const body = await res.json();
+      assert.equal(body.payable, false);
+      assert.equal(body.reason, "yard");
+      assert.equal(mock.calls.length, 0);
+    } finally {
+      mock.restore();
+    }
+  });
+
   test("zone 3 and a big yard never call Stripe", async () => {
     const env = testEnv();
     const mock = installFetch(() => {
@@ -669,6 +699,25 @@ describe("webhook", () => {
 });
 
 describe("live keys and the closed switch", () => {
+  test("a missing ASSETS binding is a 404", async () => {
+    const missing = await worker.fetch(new Request("https://lawnsbytimmy.com/"), {});
+    assert.equal(missing.status, 404);
+    assert.deepEqual(await missing.json(), { error: "Not found" });
+
+    let fetched = false;
+    const served = await worker.fetch(new Request("https://lawnsbytimmy.com/privacy.html"), {
+      ASSETS: {
+        fetch(request) {
+          fetched = true;
+          assert.equal(new URL(request.url).pathname, "/privacy.html");
+          return new Response("ok", { status: 200 });
+        },
+      },
+    });
+    assert.equal(fetched, true);
+    assert.equal(served.status, 200);
+  });
+
   test("a live key, a missing flag, or no ledger keeps every booking route closed", async () => {
     const base = {
       BOOKING_MODE: "test",

@@ -126,6 +126,7 @@ export class SlotBook {
       amountCents: input.amountCents,
       pricePerVisit: input.pricePerVisit,
       zip: input.zip,
+      yard: input.yard === "yes" ? "yes" : "no",
       windowId: input.windowId,
       windowLabel: window.label,
       visits: win.visits.map((visit) => visit.iso),

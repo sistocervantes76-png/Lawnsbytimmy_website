@@ -278,6 +278,7 @@ export async function onHold({ request, env }) {
     amountCents: price.amountCents,
     pricePerVisit: price.pricePerVisit,
     zip: fields.zip,
+    yard: fields.yard,
     saveCard: fields.saveCard,
     replaceBookingId: fields.replaceBookingId,
     customer: {
@@ -341,7 +342,7 @@ export async function onUpdate({ request, env }) {
   if (!/^BK-[a-f0-9]{16}$/.test(bookingId) || !plan) return json({ error: "Please choose the package or per visit." }, 400);
   const hold = await gated.ledger.read(bookingId);
   if (!hold || hold.status !== "held") return json({ error: "That hold expired. Please pick another arrival window." }, 409);
-  const price = quotePrice({ zip: hold.zip, plan, yard: "yes" });
+  const price = quotePrice({ zip: hold.zip, plan, yard: hold.yard });
   if (!price.payable) return json(quoteBody(price), 409);
   const wantSave = !(body.value.save_card === false || body.value.save_card === "no");
   const saveCard = hold.saveCard || wantSave;

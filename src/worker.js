@@ -54,6 +54,8 @@ export default {
     const route = routes[path];
     if (!route) {
       if (url.pathname.startsWith("/api/")) return json({ error: "Not found" }, 404);
+      // A Worker deployed without the site files has no ASSETS binding. Don't crash.
+      if (typeof env?.ASSETS?.fetch !== "function") return json({ error: "Not found" }, 404);
       return env.ASSETS.fetch(req);
     }
     const method = req.method.charAt(0) + req.method.slice(1).toLowerCase(); // GET -> Get
