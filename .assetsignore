@@ -10,3 +10,4 @@ src
 docs
 README.md
 wrangler.jsonc
+wrangler.booking-test.jsonc

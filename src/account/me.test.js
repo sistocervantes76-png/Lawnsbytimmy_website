@@ -1,7 +1,8 @@
 // Unit tests for the account page's next-visit date. Fictional rows only.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SESSION_COOKIE, signToken } from "./lib.js";
+import { SESSION_COOKIE, findCustomers, isAccountCustomerId, signToken } from "./lib.js";
+import { customerMaySaveCard } from "./card.js";
 import { nextVisit, onRequestGet, todayEt } from "./me.js";
 
 const TODAY = "2026-11-12";
@@ -177,4 +178,63 @@ test("GET /api/account/me leaves next visit blank when every date is past", asyn
 test("GET /api/account/me falls back when the Jobs tab is missing", async () => {
   const data = await loadAccount([customers("6/1/2099"), invoices]);
   assert.equal(data.next_service_date, "2099-06-01");
+});
+
+test("account lookup accepts a sheet id and a web-lead id", async () => {
+  assert.equal(isAccountCustomerId("LC-9001"), true);
+  assert.equal(isAccountCustomerId("LC-251120-143055"), true);
+  assert.equal(isAccountCustomerId("LC-251108-1951"), true);
+  assert.equal(isAccountCustomerId("MC-251120-143055"), false);
+  assert.equal(isAccountCustomerId("LC-25-1120-143055"), false);
+  const found = findCustomers({
+    customers: [
+      { Customer_ID: "LC-9001" },
+      { Customer_ID: "LC-251120-143055" },
+      { Customer_ID: "MC-251120-143055" },
+    ],
+  }, () => true).map((row) => row.Customer_ID);
+  assert.deepEqual(found, ["LC-9001", "LC-251120-143055"]);
+  // Card saving still requires LC- plus digits. Web-lead sign-in does not open that path.
+  assert.equal(customerMaySaveCard({
+    Customer_ID: "LC-251120-143055",
+    Status: "Test",
+    Payment_Method: "Cash",
+  }), false);
+
+  const secret = "unit-test-session-secret-32chars-min";
+  const phone = "5550100199";
+  const cid = "LC-251120-143055";
+  const token = await signToken({ p: "session", cid, phone, exp: Date.now() + 60_000 }, secret);
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    valueRanges: [
+      {
+        range: "Customers!A1:C2",
+        values: [
+          ["Customer_ID", "First_Name", "Phone"],
+          [cid, "Casey", "555-010-0199"],
+        ],
+      },
+      { range: "Invoices!A1:A1", values: [["Invoice_ID"]] },
+      { range: "Jobs!A1:A1", values: [["Job_ID"]] },
+    ],
+  }), { status: 200 });
+  try {
+    const res = await onRequestGet({
+      request: new Request("https://example.test/api/account/me", {
+        headers: { Cookie: `${SESSION_COOKIE}=${token}` },
+      }),
+      env: {
+        SESSION_SECRET: secret,
+        ACCOUNT_WEBHOOK_URL: "http://127.0.0.1/mock-crm",
+        ACCOUNT_WEBHOOK_KEY: "unit-test-webhook-key",
+      },
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.signed_in, true);
+    assert.equal(data.first_name, "Casey");
+  } finally {
+    globalThis.fetch = original;
+  }
 });

@@ -5,12 +5,20 @@
   "name": "lawnsbytimmy-website",
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
+  // ctx.exports is off at this date. The flag keeps SlotLedger available even
+  // when a deploy does not pass a newer compatibility date on the command line.
+  "compatibility_flags": ["enable_ctx_exports"],
   "assets": {
     "directory": "./",
     "binding": "ASSETS"
   },
   // Keep the variables/secrets set in the Cloudflare dashboard on every deploy.
+  // The booking mode flag is not set here. Booking stays closed until that
+  // flag is live and the live Stripe secrets are set.
   "keep_vars": true,
+  "vars": {
+    "BOOKING_WORKER": "production"
+  },
   "observability": { "enabled": true },
 
   // Stops sign-in text spam and code guessing (see src/account/login.js and verify.js).
@@ -19,7 +27,14 @@
   "ratelimits": [
     { "name": "LOGIN_IP_LIMITER", "namespace_id": "2601", "simple": { "limit": 5, "period": 60 } },
     { "name": "LOGIN_EMAIL_LIMITER", "namespace_id": "2602", "simple": { "limit": 2, "period": 60 } }
-  ]
+  ],
+  // SQLite slot ledger. The site build uploads a version, so this uses exports
+  // rather than a migrations tag (the test Worker still uses v1-slot-ledger).
+  // A SLOT_LEDGER binding cannot be uploaded until this class has been deployed
+  // once. Until then the Worker reaches it through ctx.exports.SlotLedger.
+  "exports": {
+    "SlotLedger": { "type": "durable-object", "storage": "sqlite" }
+  }
 
   // One-time sign-in codes. Turn on after creating the KV store
   // (docs/customer-dashboard-setup.md, Step 4b): remove the // in front of the

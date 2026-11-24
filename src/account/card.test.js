@@ -241,7 +241,10 @@ describe("account card saving", { concurrency: false }, () => {
       const form = formOf(created);
       assert.equal(form.get("mode"), "setup");
       assert.equal(form.get("currency"), "usd");
-      assert.equal(form.get("payment_method_types[0]"), "card");
+      assert.equal(form.get("payment_method_types[0]"), null);
+      assert.equal(form.get("automatic_payment_methods[enabled]"), null);
+      assert.equal(form.get("automatic_payment_methods[allow_redirects]"), null);
+      assert.equal(form.get("allowed_payment_method_types[0]"), "card");
       assert.equal(form.get("customer"), "cus_test_lawns9001");
       assert.equal(form.get("client_reference_id"), "LC-9001");
       assert.equal(form.get("metadata[business]"), "lawns_by_timmy");

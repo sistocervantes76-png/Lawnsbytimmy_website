@@ -221,7 +221,13 @@ export async function readCrm(env) {
   return out;
 }
 
-// Real customers only (IDs like LC-0001), not missed-call leads or test rows.
+// Sheet customers are LC- plus digits (LC-0001). Web leads are LC-YYMMDD-HHmmss,
+// and a few older rows use HHmm. Missed-call IDs start with MC- and are not accounts.
+export function isAccountCustomerId(id) {
+  const value = String(id || "").trim();
+  return /^LC-\d+$/.test(value) || /^LC-\d{6}-\d{6}$/.test(value) || /^LC-\d{6}-\d{4}$/.test(value);
+}
+
 export function findCustomers(crm, test) {
-  return crm.customers.filter((c) => /^LC-\d+$/.test(c.Customer_ID) && test(c));
+  return crm.customers.filter((c) => isAccountCustomerId(c.Customer_ID) && test(c));
 }
