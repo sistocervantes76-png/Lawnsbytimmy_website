@@ -25,14 +25,17 @@
     { "name": "LOGIN_IP_LIMITER", "namespace_id": "2601", "simple": { "limit": 5, "period": 60 } },
     { "name": "LOGIN_EMAIL_LIMITER", "namespace_id": "2602", "simple": { "limit": 2, "period": 60 } }
   ],
+  // Same SQLite ledger binding as the test Worker. The class is declared with
+  // exports because the site build uploads a version, and that command refuses
+  // a new migrations tag. The test Worker still uses tag v1-slot-ledger.
   "durable_objects": {
     "bindings": [
       { "name": "SLOT_LEDGER", "class_name": "SlotLedger" }
     ]
   },
-  "migrations": [
-    { "tag": "v1-slot-ledger", "new_sqlite_classes": ["SlotLedger"] }
-  ]
+  "exports": {
+    "SlotLedger": { "type": "durable-object", "storage": "sqlite" }
+  }
 
   // One-time sign-in codes. Turn on after creating the KV store
   // (docs/customer-dashboard-setup.md, Step 4b): remove the // in front of the

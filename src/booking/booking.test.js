@@ -888,6 +888,8 @@ describe("live keys and the closed switch", () => {
     assert.match(entry, /SlotLedger/);
     assert.match(prod, /SLOT_LEDGER/);
     assert.match(prod, /SlotLedger/);
+    assert.match(prod, /"storage": "sqlite"/);
+    assert.equal(prod.includes('"migrations"'), false);
     assert.equal(prod.includes("BOOKING_MODE"), false);
     assert.match(prod, /BOOKING_WORKER/);
     const testConfig = readFileSync(new URL("../../wrangler.booking-test.jsonc", import.meta.url), "utf8");
