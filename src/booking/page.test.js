@@ -24,7 +24,7 @@ function idsIn(markup) {
   return [...markup.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
 }
 
-function page({ slotsStatus = 200 } = {}) {
+function page({ slotsStatus = 200, testMode = true, plans = ["package", "per_visit"] } = {}) {
   const els = {};
   for (const id of idsIn(html)) {
     const tag = html.match(new RegExp(`<(\\w+)[^>]*\\sid="${id}"`))[1];
@@ -45,7 +45,7 @@ function page({ slotsStatus = 200 } = {}) {
   const fetch = async (path, options = {}) => {
     const body = options.body ? JSON.parse(options.body) : null;
     calls.push({ path, body });
-    if (path === "/api/book/config") return respond({ enabled: true, test_mode: true, publishableKey: "pk_test_fictional", windows: [{ id: "0800-1000", label: "8–10 AM" }], cap_per_window: 2, min_lead_days: 2, max_lead_days: 21, hold_minutes: 15, package_cents: 15400, visit_cents: 4500, first_cut_cents: 1900 });
+    if (path === "/api/book/config") return respond({ enabled: true, test_mode: testMode, plans, publishableKey: "pk_test_fictional", windows: [{ id: "0800-1000", label: "8–10 AM" }], cap_per_window: 2, min_lead_days: 2, max_lead_days: 21, hold_minutes: 15, package_cents: 15400, visit_cents: 4500, first_cut_cents: 1900 });
     if (path.startsWith("/api/book/quote")) return respond({ payable: true, package_cents: 15400, per_visit_cents: 4500 });
     if (path.startsWith("/api/book/slots")) {
       if (slotsStatus !== 200) return respond({ error: "We couldn't check the schedule. Please try again in a minute, use the instant quote form, or call (954) 880-3500.", reason: "schedule_unavailable", quote_url: "/#quote-form", phone: "(954) 880-3500" }, slotsStatus);
@@ -157,6 +157,19 @@ describe("book page", () => {
     assert.equal(last.body.save_card, false);
     assert.equal(last.body.plan, "package");
     assert.equal(p.confirmed.length, 1);
+  });
+
+  test("the test banner shows only in test mode, and package-only hides per visit", async () => {
+    const live = page({ testMode: false, plans: ["package"] });
+    await live.settle();
+    assert.equal(live.els.testBanner.hidden, true);
+    assert.equal(live.els.planVisitChoice.hidden, true);
+    assert.equal(live.els.payVisitChoice.hidden, true);
+    assert.equal(live.els.visitOffer.hidden, true);
+    const testPage = page();
+    await testPage.settle();
+    assert.equal(testPage.els.testBanner.hidden, false);
+    assert.equal(testPage.els.planVisitChoice.hidden, false);
   });
 
   test("the card form is card only: Link (its Bank and Klarna tabs) is turned off", async () => {

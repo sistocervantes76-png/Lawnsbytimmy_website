@@ -7,7 +7,7 @@
 import { json } from "../account/lib.js";
 import { verifyStripeSignature } from "../stripe-webhook.js";
 import { confirmPaid } from "./confirm.js";
-import { bookingMode } from "./guard.js";
+import { bookingMode, webhookSecretFor } from "./guard.js";
 import { getLedger } from "./handlers.js";
 
 const MAX_WEBHOOK_BYTES = 256_000;
@@ -21,11 +21,14 @@ function cardFromSetup(setupIntent) {
   };
 }
 
-export function classifyStripeEvent(event) {
+export function classifyStripeEvent(event, mode = "test") {
   if (!event || typeof event !== "object") return { action: "ignore", reason: "event" };
-  if (event.livemode === true) return { action: "ignore", reason: "livemode" };
   const object = event.data?.object || {};
-  if (object.livemode === true) return { action: "ignore", reason: "livemode" };
+  const flags = [event.livemode, object.livemode].filter((value) => typeof value === "boolean");
+  const live = flags.length > 0 && flags.every(Boolean);
+  const test = flags.length > 0 && flags.every((value) => value === false);
+  // Live events are accepted only in live mode. Test events are accepted only in test mode.
+  if (mode === "live" ? !live : !test) return { action: "ignore", reason: "livemode" };
   const meta = object.metadata || {};
   if (meta.business !== BUSINESS) return { action: "ignore", reason: "business" };
   const bookingId = String(meta.booking_id || "");
@@ -59,7 +62,8 @@ export function classifyStripeEvent(event) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (bookingMode(env) !== "test") return json({ error: "Not found" }, 404);
+  const mode = bookingMode(env);
+  if (mode === "off") return json({ error: "Not found" }, 404);
   const ledger = getLedger(env);
   if (!ledger) return json({ error: "Not found" }, 404);
   const declared = Number(request.headers.get("Content-Length") || 0);
@@ -69,7 +73,7 @@ export async function onRequestPost({ request, env }) {
   const ok = await verifyStripeSignature(
     payload,
     request.headers.get("Stripe-Signature") || "",
-    env.STRIPE_BOOKING_WEBHOOK_SECRET,
+    webhookSecretFor(env),
   );
   if (!ok) return json({ error: "Invalid signature" }, 400);
   let event;
@@ -79,7 +83,7 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "Bad payload" }, 400);
   }
   if (!event?.id || typeof event.id !== "string") return json({ error: "Bad payload" }, 400);
-  const decision = classifyStripeEvent(event);
+  const decision = classifyStripeEvent(event, mode);
   if (decision.action === "ignore") {
     await ledger.finishIgnored(event.id);
     return json({ received: true, ignored: true });

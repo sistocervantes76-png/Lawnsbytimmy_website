@@ -1,8 +1,7 @@
 // HTTP for /api/book/*. Prices and open seats are decided here, not in the browser.
-// Routes answer 404 until bookingMode is "test".
+// Routes answer 404 until bookingMode is test or live.
 
 import { json, normalizePhone, sameOrigin, sameString } from "../account/lib.js";
-import { stripe } from "../account/card.js";
 import { MemoryLedger } from "./book.js";
 import { confirmPaid, cardFromPaymentIntent } from "./confirm.js";
 import {
@@ -20,7 +19,7 @@ import {
   visitLabel,
   zoneForZip,
 } from "./config.js";
-import { bookingMode } from "./guard.js";
+import { bookingMode, bookingPlans, bookingStripe, planAllowed, publishableKeyFor } from "./guard.js";
 import { parseAvailability } from "./slots.js";
 
 const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
@@ -61,7 +60,7 @@ async function readJson(request, limit) {
 }
 
 function gate(env) {
-  if (bookingMode(env) !== "test") return { error: notFound() };
+  if (bookingMode(env) === "off") return { error: notFound() };
   const ledger = getLedger(env);
   if (!ledger) return { error: notFound() };
   return { ledger };
@@ -112,12 +111,14 @@ function quoteBody(price) {
 }
 
 export async function onConfig({ env }) {
-  if (bookingMode(env) !== "test") return notFound();
+  const mode = bookingMode(env);
+  if (mode === "off") return notFound();
   const config = bookingConfig(env);
   return json({
     enabled: true,
-    test_mode: true,
-    publishableKey: env.STRIPE_LBT_TEST_PUBLISHABLE_KEY,
+    test_mode: mode === "test",
+    plans: bookingPlans(env),
+    publishableKey: publishableKeyFor(env),
     windows: config.windows.map((window) => ({ id: window.id, label: window.label })),
     cap_per_window: config.capPerWindow,
     min_lead_days: config.minLeadDays,
@@ -144,13 +145,16 @@ function scheduleUnavailable() {
 }
 
 export async function onQuote({ request, env }) {
-  if (bookingMode(env) !== "test") return notFound();
+  if (bookingMode(env) === "off") return notFound();
   const url = new URL(request.url);
   const zip = String(url.searchParams.get("zip") || "").replace(/\D/g, "").slice(0, 5);
   const yard = url.searchParams.get("yard") === "no" ? "no" : url.searchParams.get("yard") === "yes" ? "yes" : "";
   const plan = url.searchParams.get("plan") === "per_visit" ? "per_visit" : "package";
   if (!/^\d{5}$/.test(zip)) return json({ error: "Please enter a 5-digit ZIP code." }, 400);
   if (!yard) return json({ error: "Please tell us if the grass area is up to 5,000 sq ft." }, 400);
+  if (!planAllowed(env, plan)) {
+    return json({ payable: false, reason: "plan", error: "Online booking is the 4-visit package." });
+  }
   return json(quoteBody(quotePrice({ zip, plan, yard })));
 }
 
@@ -265,6 +269,9 @@ export async function onHold({ request, env }) {
   const parsed = parseHold(body.value);
   if (parsed.error) return json({ error: parsed.error }, 400);
   const fields = parsed.value;
+  if (!planAllowed(env, fields.plan)) {
+    return json({ payable: false, reason: "plan", error: "Online booking is the 4-visit package." }, 409);
+  }
   const price = quotePrice({ zip: fields.zip, plan: fields.plan, yard: fields.yard });
   if (!price.payable) return json(quoteBody(price), 409);
   try {
@@ -309,15 +316,15 @@ export async function onHold({ request, env }) {
   }
   if (previousPi) {
     try {
-      await stripe(env, `/payment_intents/${encodeURIComponent(previousPi)}/cancel`, "POST");
+      await bookingStripe(env, `/payment_intents/${encodeURIComponent(previousPi)}/cancel`, "POST");
     } catch {
       // The old hold is already released. A late payment still has to be reconciled by the webhook.
     }
   }
   try {
-    const stripeCustomer = await stripe(env, "/customers", "POST", customerForm(customerId, bookingId, fields), `lbt-book-cust-${customerId}`);
+    const stripeCustomer = await bookingStripe(env, "/customers", "POST", customerForm(customerId, bookingId, fields), `lbt-book-cust-${customerId}`);
     const booking = { ...held.booking, stripeCustomerId: stripeCustomer.id };
-    const paymentIntent = await stripe(env, "/payment_intents", "POST", paymentForm(booking, price, fields), `lbt-book-pi-${bookingId}`);
+    const paymentIntent = await bookingStripe(env, "/payment_intents", "POST", paymentForm(booking, price, fields), `lbt-book-pi-${bookingId}`);
     await gated.ledger.attachPayment(bookingId, {
       paymentIntentId: paymentIntent.id,
       stripeCustomerId: stripeCustomer.id,
@@ -353,6 +360,9 @@ export async function onUpdate({ request, env }) {
   const bookingId = String(body.value.booking_id || "");
   const plan = body.value.plan === "per_visit" ? "per_visit" : body.value.plan === "package" ? "package" : "";
   if (!/^BK-[a-f0-9]{16}$/.test(bookingId) || !plan) return json({ error: "Please choose the package or per visit." }, 400);
+  if (!planAllowed(env, plan)) {
+    return json({ payable: false, reason: "plan", error: "Online booking is the 4-visit package." }, 409);
+  }
   const hold = await gated.ledger.read(bookingId);
   if (!hold || hold.status !== "held") return json({ error: "That hold expired. Please pick another arrival window." }, 409);
   const price = quotePrice({ zip: hold.zip, plan, yard: hold.yard });
@@ -371,7 +381,7 @@ export async function onUpdate({ request, env }) {
   // Unticking after saving was on clears setup_future_usage on the PaymentIntent (an empty value unsets it).
   else if (hold.saveCard) form.set("setup_future_usage", "");
   try {
-    const paymentIntent = await stripe(env, `/payment_intents/${encodeURIComponent(hold.paymentIntentId)}`, "POST", form);
+    const paymentIntent = await bookingStripe(env, `/payment_intents/${encodeURIComponent(hold.paymentIntentId)}`, "POST", form);
     const updated = await gated.ledger.updatePlan(bookingId, {
       plan: price.plan,
       zone: price.zone,
@@ -425,7 +435,7 @@ export async function onStatus({ request, env }) {
   if (!booking.forwarded && booking.paymentIntentId && booking.status !== "released") {
     let remote = null;
     try {
-      remote = await stripe(env, `/payment_intents/${encodeURIComponent(booking.paymentIntentId)}?expand[]=latest_charge`);
+      remote = await bookingStripe(env, `/payment_intents/${encodeURIComponent(booking.paymentIntentId)}?expand[]=latest_charge`);
     } catch (err) {
       console.error("booking status: " + (err?.message || err));
     }

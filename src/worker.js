@@ -1,7 +1,7 @@
 // Cloudflare Worker entry point for lawnsbytimmy.com.
 // /api/account/* runs the customer account code. The Stripe test webhook
-// lives at /api/stripe/lbt-webhook. Booking routes exist only for the test
-// Worker and answer 404 until that Worker's test switches are all on.
+// lives at /api/stripe/lbt-webhook. Booking routes answer 404 until this
+// Worker's role, mode, and matching Stripe keys are all set.
 // Everything else is the regular static site, served as before.
 import * as login from "./account/login.js";
 import * as verify from "./account/verify.js";
@@ -14,6 +14,8 @@ import * as booking from "./booking/handlers.js";
 import * as bookingWebhook from "./booking/webhook.js";
 import { bookingMode } from "./booking/guard.js";
 import { json } from "./account/lib.js";
+
+export { SlotLedger } from "./booking/ledger.js";
 
 const routes = {
   "/api/account/login": login,
@@ -50,7 +52,7 @@ export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/$/, "");
-    if (bookingPaths.has(path) && bookingMode(env) !== "test") return json({ error: "Not found" }, 404);
+    if (bookingPaths.has(path) && bookingMode(env) === "off") return json({ error: "Not found" }, 404);
     const route = routes[path];
     if (!route) {
       if (url.pathname.startsWith("/api/")) return json({ error: "Not found" }, 404);

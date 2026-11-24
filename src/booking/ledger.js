@@ -2,9 +2,16 @@
 // number, so one named object is the lock: two payments can't take the last seat.
 // Sharding this would reintroduce the race.
 
-import { DurableObject } from "cloudflare:workers";
 import { bookingConfig } from "./config.js";
 import { SlotBook } from "./book.js";
+
+// Workers resolve this. Node unit tests do not, and they never construct the class.
+let DurableObject = class {};
+try {
+  ({ DurableObject } = await import("cloudflare:workers"));
+} catch {
+  DurableObject = class {};
+}
 
 export class SlotLedger extends DurableObject {
   constructor(ctx, env) {

@@ -1,8 +1,8 @@
 # Test Worker: book and pay
 
-This is a test-only booking page. It does not run on the production Worker, and it refuses live Stripe keys. Nothing here charges a real card.
+This file is how to run booking on the test Worker. That Worker accepts test Stripe keys only. Live keys are refused there.
 
-The production site keeps serving the quote form, the account page, and the missed-call flow as they are. `/book/` on production says booking isn't open yet until this test setup is deliberately copied over later, which is a separate decision.
+The production Worker can take live payments only after `BOOKING_MODE` is set to `live` and the live secrets below are set in the dashboard. Until then `/book/` says booking isn't open yet. Do not put key values in this file.
 
 ## Deploy the test Worker
 
@@ -14,7 +14,7 @@ npx wrangler deploy -c wrangler.booking-test.jsonc
 
 That publishes a Worker named `lbt-booking-test` on `workers.dev`. It does not attach `lawnsbytimmy.com` and it does not change the `lawnsbytimmy-website` Worker. Wrangler prints the `workers.dev` hostname. Open `/book/` on that hostname.
 
-Do not run `wrangler deploy` without `-c` for this work. The default config is the production Worker and does not include the slot ledger.
+Do not run `wrangler deploy` without `-c` when you mean the test Worker. The default config is the production Worker. It includes the slot ledger, and booking stays closed there until live mode is turned on.
 
 ## Secrets
 
@@ -22,7 +22,7 @@ Set these on `lbt-booking-test` only, with `npx wrangler secret put <NAME> -c wr
 
 | Name | What it is |
 |---|---|
-| `BOOKING_MODE` | Already set to `test` in the test config. Any other value turns booking off. |
+| `BOOKING_MODE` | Already set to `test` in the test config. `live` is ignored on this Worker. |
 | `STRIPE_LBT_TEST_SECRET_KEY` | Stripe test secret, `sk_test_…` or `rk_test_…`. A live key is refused. |
 | `STRIPE_LBT_TEST_PUBLISHABLE_KEY` | Stripe test publishable key, `pk_test_…`. |
 | `STRIPE_BOOKING_WEBHOOK_SECRET` | Signing secret (`whsec_…`) for a Stripe **test** webhook endpoint. |
@@ -37,7 +37,22 @@ Optional plain vars on the test Worker:
 | `BOOKING_BLOCKED_DATES` | Optional. Days with no visits (holidays, days off), `YYYY-MM-DD` Eastern, comma or space separated, e.g. `2026-11-26,2026-12-25`. A day is closed for every window, and a 4-visit series that would land on it is not offered. Also accepted as `"blockedDates": [...]` in `BOOKING_CONFIG_JSON`. Empty means nothing is blocked. The owner picks the dates. |
 | `BOOKING_CONFIG_JSON` | Optional schedule override. Example: `{"windows":[{"id":"0800-1000","label":"8–10 AM","start":"08:00","end":"10:00"},{"id":"1000-1200","label":"10 AM–12 PM","start":"10:00","end":"12:00"}],"capPerWindow":2,"minLeadDays":2,"maxLeadDays":21,"holdMinutes":15}` |
 
-Prices stay in code: $154 for the package, $45 per visit, $55 per visit in zone 2. The ZIP decides the price on the server.
+Prices stay in code: $154 for the package, $45 per visit, $55 per visit in zone 2. The ZIP decides the price on the server. `BOOKING_PLANS=package` hides and refuses per-visit. On the production Worker, live mode is package-only until that variable lists `per_visit`.
+
+## Live mode (production Worker only)
+
+Set these on `lawnsbytimmy-website` only, as secrets or dashboard variables. The test names above stay on the test Worker. Booking stays closed until `BOOKING_MODE` is `live` and every live secret is set.
+
+| Name | What it is |
+|---|---|
+| `BOOKING_MODE` | `live`. Any other value keeps the routes closed. |
+| `STRIPE_LBT_LIVE_SECRET_KEY` | Live secret key. A test key is refused. |
+| `STRIPE_LBT_LIVE_PUBLISHABLE_KEY` | Live publishable key. |
+| `STRIPE_LBT_LIVE_WEBHOOK_SECRET` | Signing secret for the live booking webhook endpoint. |
+| `BOOKING_WEBHOOK_URL` | HTTPS URL of the live scenario. Set it on this Worker, not in the repo. |
+| `BOOKING_WEBHOOK_KEY` | Shared key for that scenario. |
+
+`BOOKING_WORKER` is already `production` in `wrangler.jsonc` and `test` in the test config. Do not swap them.
 
 ## Stripe test webhook
 

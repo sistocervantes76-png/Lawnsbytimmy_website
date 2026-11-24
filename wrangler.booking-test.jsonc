@@ -1,7 +1,7 @@
 {
   // Test Worker only. Do not deploy this file as lawnsbytimmy-website.
   // Use: npx wrangler deploy -c wrangler.booking-test.jsonc
-  // The production config is wrangler.jsonc and does not include this binding.
+  // Production uses wrangler.jsonc. This file stays the test Worker.
   "name": "lbt-booking-test",
   "main": "src/booking-worker.js",
   "compatibility_date": "2025-09-01",
@@ -17,7 +17,8 @@
     "binding": "ASSETS"
   },
   "vars": {
-    "BOOKING_MODE": "test"
+    "BOOKING_MODE": "test",
+    "BOOKING_WORKER": "test"
   },
   "durable_objects": {
     "bindings": [

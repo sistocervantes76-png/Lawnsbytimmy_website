@@ -76,6 +76,7 @@ function testEnv(overrides = {}) {
   const { SLOT_LEDGER_TEST, ...rest } = overrides;
   const env = {
     BOOKING_MODE: "test",
+    BOOKING_WORKER: "test",
     STRIPE_LBT_TEST_SECRET_KEY: TEST_KEY,
     STRIPE_LBT_TEST_PUBLISHABLE_KEY: PUBLISHABLE,
     STRIPE_BOOKING_WEBHOOK_SECRET: WEBHOOK_SECRET,
@@ -789,6 +790,21 @@ describe("webhook", () => {
   });
 });
 
+const LIVE_SECRET = "sk_live_fictional_not_a_real_key";
+const LIVE_PK = "pk_live_fictional_not_a_real_key";
+const LIVE_WEBHOOK = "whsec_fictional_live_unit_secret";
+
+function liveEnv(overrides = {}) {
+  return testEnv({
+    BOOKING_MODE: "live",
+    BOOKING_WORKER: "production",
+    STRIPE_LBT_LIVE_SECRET_KEY: LIVE_SECRET,
+    STRIPE_LBT_LIVE_PUBLISHABLE_KEY: LIVE_PK,
+    STRIPE_LBT_LIVE_WEBHOOK_SECRET: LIVE_WEBHOOK,
+    ...overrides,
+  });
+}
+
 describe("live keys and the closed switch", () => {
   test("a missing ASSETS binding is a 404", async () => {
     const missing = await worker.fetch(new Request("https://lawnsbytimmy.com/"), {});
@@ -812,6 +828,7 @@ describe("live keys and the closed switch", () => {
   test("a live key, a missing flag, or no ledger keeps every booking route closed", async () => {
     const base = {
       BOOKING_MODE: "test",
+      BOOKING_WORKER: "test",
       STRIPE_LBT_TEST_SECRET_KEY: TEST_KEY,
       STRIPE_LBT_TEST_PUBLISHABLE_KEY: PUBLISHABLE,
       STRIPE_BOOKING_WEBHOOK_SECRET: WEBHOOK_SECRET,
@@ -825,6 +842,11 @@ describe("live keys and the closed switch", () => {
     assert.equal(bookingMode({ ...base, STRIPE_LBT_TEST_PUBLISHABLE_KEY: "pk_live_example" }), "off");
     assert.equal(bookingMode({ ...base, BOOKING_MODE: "" }), "off");
     assert.equal(bookingMode({ ...base, SLOT_LEDGER_TEST: undefined, SLOT_LEDGER: undefined }), "off");
+    assert.equal(bookingMode({ ...base, BOOKING_WORKER: "production" }), "off");
+    assert.equal(bookingMode(liveEnv()), "live");
+    assert.equal(bookingMode(liveEnv({ BOOKING_WORKER: "test" })), "off");
+    assert.equal(bookingMode(liveEnv({ STRIPE_LBT_LIVE_SECRET_KEY: TEST_KEY })), "off");
+    assert.equal(bookingMode(liveEnv({ BOOKING_MODE: "test" })), "off");
 
     const calls = [];
     const mock = installFetch(() => {
@@ -861,15 +883,18 @@ describe("live keys and the closed switch", () => {
     const home = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
     const page = readFileSync(new URL("../../book/index.html", import.meta.url), "utf8");
     const docs = readFileSync(new URL("../../docs/booking-test-worker.md", import.meta.url), "utf8");
-    assert.equal(workerSrc.includes("ledger.js"), false);
+    assert.match(workerSrc, /export \{ SlotLedger \}/);
     assert.equal(workerSrc.includes("STRIPE_SECRET_KEY"), false);
     assert.match(entry, /SlotLedger/);
-    assert.equal(prod.includes("SlotLedger"), false);
+    assert.match(prod, /SLOT_LEDGER/);
+    assert.match(prod, /SlotLedger/);
     assert.equal(prod.includes("BOOKING_MODE"), false);
+    assert.match(prod, /BOOKING_WORKER/);
     const testConfig = readFileSync(new URL("../../wrangler.booking-test.jsonc", import.meta.url), "utf8");
     assert.match(testConfig, /"workers_dev": true/);
     assert.match(testConfig, /"preview_urls": false/);
-    assert.equal(home.includes("/book/"), false);
+    assert.match(home, /href="\/book\/"/);
+    assert.match(home, /Book &amp; pay/);
     assert.match(page, /Booking isn't open yet\./);
     assert.match(page, /I agree to receive text messages from Lawns by Timmy at the number provided/);
     assert.equal(page.includes("8\u201310 AM"), false);
@@ -878,6 +903,122 @@ describe("live keys and the closed switch", () => {
     assert.equal(docs.includes("sk_live_"), false);
     assert.equal(page.includes("sk_live_"), false);
     assert.equal(page.includes("sk_test_"), false);
+  });
+});
+
+describe("live mode and package-only launch", () => {
+  test("live events are ignored unless the Worker is in live mode", async () => {
+    const ledger = new MemoryLedger({}, { now: () => NOW });
+    const slot = firstSlot(await ledger.list(), "1000-1200");
+    const held = await ledger.hold(holdInput("BK-1111222233334444", slot, { customerId: "LC-26111815000088" }));
+    await ledger.attachPayment(held.booking.bookingId, {
+      paymentIntentId: "pi_test_live88",
+      stripeCustomerId: "cus_test_live88",
+    });
+    const booking = await ledger.read(held.booking.bookingId);
+    const env = liveEnv({ SLOT_LEDGER_TEST: ledger });
+    const event = {
+      id: "evt_live_ok",
+      type: "payment_intent.succeeded",
+      livemode: true,
+      data: {
+        object: {
+          id: booking.paymentIntentId,
+          livemode: true,
+          charges: { data: [{ payment_method_details: { card: { brand: "visa", last4: "4242" } } }] },
+          metadata: { business: "lawns_by_timmy", kind: "booking", booking_id: booking.bookingId },
+        },
+      },
+    };
+    const payload = JSON.stringify(event);
+    const stamp = Math.floor(Date.now() / 1000);
+    const header = await stripeSignature(LIVE_WEBHOOK, payload, stamp);
+    const testBody = JSON.stringify({
+      ...event,
+      id: "evt_test_on_live",
+      livemode: false,
+      data: { object: { ...event.data.object, livemode: false } },
+    });
+    const testOnLive = await stripeSignature(LIVE_WEBHOOK, testBody, stamp);
+    const liveOnTestBody = JSON.stringify({ ...event, id: "evt_live_on_test" });
+    const liveOnTest = await stripeSignature(WEBHOOK_SECRET, liveOnTestBody, stamp);
+    const mock = installFetch(() => Response.json({ ok: true }));
+    try {
+      const testEvent = await onBookingWebhook({
+        request: new Request("https://book.test/api/stripe/booking-webhook", {
+          method: "POST",
+          headers: { "Stripe-Signature": liveOnTest },
+          body: liveOnTestBody,
+        }),
+        env: testEnv({ SLOT_LEDGER_TEST: ledger }),
+      });
+      assert.equal((await testEvent.json()).ignored, true);
+
+      const ignored = await onBookingWebhook({
+        request: new Request("https://book.test/api/stripe/booking-webhook", {
+          method: "POST",
+          headers: { "Stripe-Signature": testOnLive },
+          body: testBody,
+        }),
+        env,
+      });
+      assert.equal((await ignored.json()).ignored, true);
+
+      const paid = await onBookingWebhook({
+        request: new Request("https://book.test/api/stripe/booking-webhook", {
+          method: "POST",
+          headers: { "Stripe-Signature": header },
+          body: payload,
+        }),
+        env,
+      });
+      assert.equal(paid.status, 200);
+      assert.equal((await paid.json()).ignored, undefined);
+      const forwarded = mock.calls.filter((call) => call.url === HOOK);
+      assert.equal(forwarded.length, 1);
+      assert.equal(JSON.parse(forwarded[0].body).test, false);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  test("the config reports live mode and package only", async () => {
+    const data = await (await onConfig({ env: liveEnv() })).json();
+    assert.equal(data.test_mode, false);
+    assert.deepEqual(data.plans, ["package"]);
+    assert.equal(data.publishableKey, LIVE_PK);
+  });
+
+  test("per visit is refused when booking is package only", async () => {
+    const env = testEnv({ BOOKING_PLANS: "package" });
+    const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+    const mock = installFetch(() => {
+      throw new Error("per visit must not call Stripe");
+    });
+    try {
+      const quote = await onQuote({
+        request: new Request("https://book.test/api/book/quote?zip=33309&yard=yes&plan=per_visit"),
+        env,
+      });
+      assert.equal((await quote.json()).reason, "plan");
+      const res = await onHold({
+        request: new Request("https://book.test/api/book/hold", {
+          method: "POST",
+          headers: { Origin: "https://book.test" },
+          body: JSON.stringify({
+            first_name: "Test", last_name: "Booker", phone: "9545550123", email: "booker@example.test",
+            address: "1 Test St", city: "Oakland Park", zip: "33309", yard: "yes", plan: "per_visit",
+            date: slot.date, window_id: slot.windowId,
+          }),
+        }),
+        env,
+      });
+      assert.equal(res.status, 409);
+      assert.equal((await res.json()).reason, "plan");
+      assert.equal(mock.calls.length, 0);
+    } finally {
+      mock.restore();
+    }
   });
 });
 

@@ -2,8 +2,7 @@
 // Anything other than a JSON reply with ok:true is a failure so Stripe retries.
 // The shared key is the JSON "key" field the test scenario filters on.
 
-import { stripe } from "../account/card.js";
-import { isAllowedHookUrl } from "./guard.js";
+import { bookingMode, bookingStripe, isAllowedHookUrl } from "./guard.js";
 
 export function cardFromPaymentIntent(paymentIntent) {
   const card = paymentIntent?.latest_charge?.payment_method_details?.card
@@ -28,7 +27,7 @@ export async function forwardBookingPaid(env, payload) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...payload, key }),
+    body: JSON.stringify({ ...payload, test: bookingMode(env) !== "live", key }),
   });
   const text = await res.text();
   let data = null;
@@ -45,7 +44,7 @@ export async function forwardBookingPaid(env, payload) {
 async function cardFor(env, booking, card) {
   if (card?.last4) return { ...card, saved: booking.saveCard };
   if (!booking.paymentIntentId) return { brand: card?.brand || "", last4: "", saved: booking.saveCard };
-  const remote = await stripe(
+  const remote = await bookingStripe(
     env,
     `/payment_intents/${encodeURIComponent(booking.paymentIntentId)}?expand[]=latest_charge`,
   );

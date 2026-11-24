@@ -10,7 +10,12 @@
     "binding": "ASSETS"
   },
   // Keep the variables/secrets set in the Cloudflare dashboard on every deploy.
+  // The booking mode flag is not set here. Booking stays closed until that
+  // flag is live and the live Stripe secrets are set.
   "keep_vars": true,
+  "vars": {
+    "BOOKING_WORKER": "production"
+  },
   "observability": { "enabled": true },
 
   // Stops sign-in text spam and code guessing (see src/account/login.js and verify.js).
@@ -19,6 +24,14 @@
   "ratelimits": [
     { "name": "LOGIN_IP_LIMITER", "namespace_id": "2601", "simple": { "limit": 5, "period": 60 } },
     { "name": "LOGIN_EMAIL_LIMITER", "namespace_id": "2602", "simple": { "limit": 2, "period": 60 } }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "SLOT_LEDGER", "class_name": "SlotLedger" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1-slot-ledger", "new_sqlite_classes": ["SlotLedger"] }
   ]
 
   // One-time sign-in codes. Turn on after creating the KV store

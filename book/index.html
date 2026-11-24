@@ -156,7 +156,7 @@
   </section>
 
   <div id="app" hidden>
-    <p class="banner" id="testBanner">Test mode. This page cannot take a live payment.</p>
+    <p class="banner" id="testBanner" hidden>Test mode. This page cannot take a live payment.</p>
     <div id="error" class="error" hidden role="alert"></div>
 
     <section id="step-details">
@@ -164,7 +164,7 @@
         <p class="kicker">Oakland Park &amp; Fort Lauderdale</p>
         <h1>Your first cut is <span id="firstCut">$19</span></h1>
         <p>With the 4-visit bi-weekly package — <strong id="packagePrice">$154</strong> up front (<span id="firstCutInline">$19</span> first, then 3 at $45).</p>
-        <p>Or <strong id="visitPrice">$45</strong> / visit, bi-weekly. <span id="zone2Hint"></span></p>
+        <p id="visitOffer">Or <strong id="visitPrice">$45</strong> / visit, bi-weekly. <span id="zone2Hint"></span></p>
         <p class="note">Recurring bi-weekly service only, not a one-time cut. Some Fort Lauderdale ZIPs add a $10 trip fee to per-visit service. This price is for a grass area up to 5,000 sq ft.</p>
       </div>
       <form id="details" class="card">
@@ -214,7 +214,7 @@
         <fieldset>
           <legend>How do you want to pay?</legend>
           <label class="choice"><input type="radio" name="plan" value="package" checked> 4-visit package</label>
-          <label class="choice"><input type="radio" name="plan" value="per_visit"> Per visit</label>
+          <label class="choice" id="planVisitChoice"><input type="radio" name="plan" value="per_visit"> Per visit</label>
         </fieldset>
         <label class="choice sms" for="sms_consent">
           <input type="checkbox" id="sms_consent" name="sms_consent">
@@ -249,7 +249,7 @@
         <fieldset>
           <legend>Due today</legend>
           <label class="choice"><input type="radio" name="pay_plan" value="package"> <span id="payPackageLabel">4-visit package</span></label>
-          <label class="choice"><input type="radio" name="pay_plan" value="per_visit"> <span id="payVisitLabel">Per visit</span></label>
+          <label class="choice" id="payVisitChoice"><input type="radio" name="pay_plan" value="per_visit"> <span id="payVisitLabel">Per visit</span></label>
         </fieldset>
         <div class="price total"><span>Due today</span><strong id="payDue"></strong></div>
         <p class="note" id="holdNote"></p>
@@ -357,6 +357,16 @@ function setPlan(plan) {
   for (const input of document.querySelectorAll("input[name=plan], input[name=pay_plan]")) {
     input.checked = input.value === plan;
   }
+}
+
+function applyPlans(config) {
+  const plans = Array.isArray(config.plans) && config.plans.length ? config.plans : ["package", "per_visit"];
+  const visit = plans.includes("per_visit");
+  for (const id of ["planVisitChoice", "payVisitChoice", "visitOffer"]) {
+    const el = $(id);
+    if (el) el.hidden = !visit;
+  }
+  if (!visit) setPlan("package");
 }
 
 function fillOffer(config) {
@@ -645,6 +655,8 @@ async function init() {
     return;
   }
   state.config = config;
+  $("testBanner").hidden = config.test_mode !== true;
+  applyPlans(config);
   fillOffer(config);
   $("closed").hidden = true;
   $("app").hidden = false;
