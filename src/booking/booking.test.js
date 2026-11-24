@@ -905,3 +905,127 @@ describe("payload helper", () => {
     assert.match(payload.customer_id, /^LC-\d+$/);
   });
 });
+
+describe("save-card consent, booking reference, schedule outage", () => {
+  const holdRequest = (extra = {}) => new Request("https://book.test/api/book/hold", {
+    method: "POST",
+    headers: { Origin: "https://book.test" },
+    body: JSON.stringify({
+      first_name: "Test", last_name: "Booker", phone: "9545550123", email: "booker@example.test",
+      address: "1 Test St", city: "Oakland Park", zip: "33309", yard: "yes", plan: "package", ...extra,
+    }),
+  });
+  const updateRequest = (body) => new Request("https://book.test/api/book/update", {
+    method: "POST", headers: { Origin: "https://book.test" }, body: JSON.stringify(body),
+  });
+
+  function stripeMock(seen) {
+    return installFetch((call) => {
+      if (call.url === HOOK) return new Response(JSON.stringify(sheet([])), { status: 200 });
+      const url = new URL(call.url);
+      if (url.pathname === "/v1/customers") return Response.json({ id: "cus_test_consent" });
+      if (call.method === "POST" && url.pathname.startsWith("/v1/payment_intents")) {
+        seen.push({ path: url.pathname, form: new URLSearchParams(call.body) });
+        return Response.json({ id: "pi_test_consent", client_secret: "pi_test_consent_secret_xxx" });
+      }
+      return Response.json({ error: { message: "unexpected" } }, { status: 500 });
+    });
+  }
+
+  test("a hold without save_card does not save the card", async () => {
+    const env = testEnv();
+    const seen = [];
+    const mock = stripeMock(seen);
+    try {
+      const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+      const res = await onHold({ request: holdRequest({ date: slot.date, window_id: slot.windowId }), env });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.save_card, false);
+      assert.equal(body.plan, "package");
+      assert.equal(seen[0].form.get("setup_future_usage"), null);
+      assert.equal(seen[0].form.get("metadata[save_card]"), "no");
+      assert.equal((await env.SLOT_LEDGER_TEST.read(body.booking_id)).saveCard, false);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  test("unticking after a ticked hold turns saving off and clears setup_future_usage", async () => {
+    const env = testEnv();
+    const seen = [];
+    const mock = stripeMock(seen);
+    try {
+      const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+      const held = await (await onHold({ request: holdRequest({ date: slot.date, window_id: slot.windowId, save_card: true }), env })).json();
+      assert.equal(held.save_card, true);
+      assert.equal(seen[0].form.get("setup_future_usage"), "off_session");
+      const off = await onUpdate({ request: updateRequest({ booking_id: held.booking_id, plan: "package", save_card: false }), env });
+      assert.equal(off.status, 200);
+      const offBody = await off.json();
+      assert.equal(offBody.save_card, false);
+      assert.equal(offBody.save_card_locked, false);
+      assert.equal(seen[1].form.get("setup_future_usage"), "");
+      assert.equal(seen[1].form.get("metadata[save_card]"), "no");
+      // A later plan switch that omits save_card keeps it off.
+      const again = await (await onUpdate({ request: updateRequest({ booking_id: held.booking_id, plan: "per_visit" }), env })).json();
+      assert.equal(again.save_card, false);
+      assert.equal(seen[2].form.get("setup_future_usage"), null);
+      assert.equal((await env.SLOT_LEDGER_TEST.read(held.booking_id)).saveCard, false);
+      // Ticking again is honoured too.
+      const on = await (await onUpdate({ request: updateRequest({ booking_id: held.booking_id, plan: "package", save_card: true }), env })).json();
+      assert.equal(on.save_card, true);
+      assert.equal(seen[3].form.get("setup_future_usage"), "off_session");
+    } finally {
+      mock.restore();
+    }
+  });
+
+  test("the ledger keeps the customer's latest save-card choice", async () => {
+    const ledger = new MemoryLedger(testEnv(), { now: () => NOW });
+    const slot = firstSlot(await ledger.list());
+    assert.equal((await ledger.hold(holdInput("BK-00000000000000c1", slot, { saveCard: true }))).ok, true);
+    const updated = await ledger.updatePlan("BK-00000000000000c1", { plan: "package", zone: 1, amountCents: 15400, pricePerVisit: 45, saveCard: false });
+    assert.equal(updated.ok, true);
+    assert.equal(updated.saveCardLocked, false);
+    assert.equal(updated.booking.saveCard, false);
+  });
+
+  test("status includes the BK- booking reference", async () => {
+    const env = testEnv();
+    const seen = [];
+    const mock = stripeMock(seen);
+    try {
+      const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+      const held = await (await onHold({ request: holdRequest({ date: slot.date, window_id: slot.windowId }), env })).json();
+      mock.restore();
+      const quiet = installFetch(() => Response.json({ id: "pi_test_consent", status: "requires_payment_method" }));
+      try {
+        const res = await onStatus({ request: new Request(`https://book.test/api/book/status?booking_id=${held.booking_id}`), env });
+        const body = await res.json();
+        assert.equal(body.booking_id, held.booking_id);
+        assert.match(body.booking_id, /^BK-[a-f0-9]{16}$/);
+      } finally {
+        quiet.restore();
+      }
+    } finally {
+      mock.restore();
+    }
+  });
+
+  test("a non-JSON availability reply (scenario off) returns 503 with the quote form and phone", async () => {
+    const env = testEnv();
+    const mock = installFetch(() => new Response("Accepted", { status: 200 }));
+    try {
+      const res = await onSlots({ request: new Request("https://book.test/api/book/slots?zip=33301"), env });
+      assert.equal(res.status, 503);
+      const body = await res.json();
+      assert.match(body.error, /couldn't check the schedule/);
+      assert.equal(body.reason, "schedule_unavailable");
+      assert.ok(body.quote_url);
+      assert.equal(body.phone, "(954) 880-3500");
+    } finally {
+      mock.restore();
+    }
+  });
+});

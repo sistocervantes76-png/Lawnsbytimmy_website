@@ -95,5 +95,5 @@ Card saving on the account page still requires `LC-` plus digits. That path is u
 ## Tests
 
 ```bash
-node --test src/booking/booking.test.js src/account/me.test.js src/account/card.test.js
+node --test src/booking/booking.test.js src/booking/page.test.js src/account/me.test.js src/account/card.test.js
 ```

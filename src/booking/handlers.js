@@ -133,6 +133,16 @@ export async function onConfig({ env }) {
   });
 }
 
+// Availability comes from the Make scenario. If it is off or queued the reply is not JSON; point people to the quote form or phone.
+function scheduleUnavailable() {
+  return json({
+    error: "We couldn't check the schedule. Please try again in a minute, use the instant quote form, or call (954) 880-3500.",
+    reason: "schedule_unavailable",
+    quote_url: QUOTE_URL,
+    phone: "(954) 880-3500",
+  }, 503);
+}
+
 export async function onQuote({ request, env }) {
   if (bookingMode(env) !== "test") return notFound();
   const url = new URL(request.url);
@@ -156,7 +166,7 @@ export async function onSlots({ request, env }) {
     await refreshSnapshot(env, gated.ledger, { force: false });
   } catch (err) {
     console.error("booking slots: " + (err?.message || err));
-    return json({ error: "We couldn't check the schedule. Please try again in a minute." }, 503);
+    return scheduleUnavailable();
   }
   const listed = await gated.ledger.list();
   const config = bookingConfig(env);
@@ -182,7 +192,8 @@ function parseHold(body) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(body.date || "") ? body.date : "";
   const windowId = clean(body.window_id, 40);
   const sms = body.sms_consent === true || body.sms_consent === "yes" || body.sms_consent === "on";
-  const saveCard = !(body.save_card === false || body.save_card === "no");
+  // Consent: the card is saved only when the customer ticks the box. Missing means no.
+  const saveCard = body.save_card === true || body.save_card === "yes";
   const replaceBookingId = /^BK-[a-f0-9]{16}$/.test(body.replace_booking_id || "") ? body.replace_booking_id : "";
   if (!first || !last) return { error: "Please enter your first and last name." };
   if (!phone) return { error: "Please enter a 10-digit cell number." };
@@ -260,7 +271,7 @@ export async function onHold({ request, env }) {
     await refreshSnapshot(env, gated.ledger, { force: true });
   } catch (err) {
     console.error("booking hold: " + (err?.message || err));
-    return json({ error: "We couldn't check the schedule. Please try again in a minute." }, 503);
+    return scheduleUnavailable();
   }
   const bookingId = newBookingId();
   const customerId = newCustomerId();
@@ -323,6 +334,7 @@ export async function onHold({ request, env }) {
       window_label: held.booking.windowLabel,
       window_id: held.booking.windowId,
       plan: price.plan,
+      save_card: !!fields.saveCard,
       visits: held.booking.visits.map((iso, index) => ({ n: index + 1, date: isoToMdy(iso), label: visitLabel(iso) })),
     });
   } catch (err) {
@@ -345,10 +357,10 @@ export async function onUpdate({ request, env }) {
   if (!hold || hold.status !== "held") return json({ error: "That hold expired. Please pick another arrival window." }, 409);
   const price = quotePrice({ zip: hold.zip, plan, yard: hold.yard });
   if (!price.payable) return json(quoteBody(price), 409);
-  // Omitted save_card keeps the choice stored on the hold. Sending false only turns saving off when it was already off.
+  // Omitted save_card keeps the choice stored on the hold. An explicit true or false is the customer's choice and always wins.
   const saveCard = body.value.save_card === undefined
     ? !!hold.saveCard
-    : !(body.value.save_card === false || body.value.save_card === "no");
+    : body.value.save_card === true || body.value.save_card === "yes";
   const form = new URLSearchParams();
   form.set("amount", String(price.amountCents));
   form.set("description", description(price));
@@ -356,6 +368,8 @@ export async function onUpdate({ request, env }) {
   form.set("metadata[zone]", String(price.zone));
   form.set("metadata[save_card]", saveCard ? "yes" : "no");
   if (saveCard) form.set("setup_future_usage", "off_session");
+  // Unticking after saving was on clears setup_future_usage on the PaymentIntent (an empty value unsets it).
+  else if (hold.saveCard) form.set("setup_future_usage", "");
   try {
     const paymentIntent = await stripe(env, `/payment_intents/${encodeURIComponent(hold.paymentIntentId)}`, "POST", form);
     const updated = await gated.ledger.updatePlan(bookingId, {
@@ -372,7 +386,7 @@ export async function onUpdate({ request, env }) {
       amount_cents: price.amountCents,
       plan: price.plan,
       save_card: updated.booking.saveCard,
-      save_card_locked: !!updated.saveCardLocked,
+      save_card_locked: false,
     });
   } catch (err) {
     console.error("booking update: " + (err?.message || err));
@@ -384,6 +398,7 @@ function statusBody(booking) {
   const first = booking.visits?.[0] || "";
   return {
     status: booking.status,
+    booking_id: booking.bookingId || "",
     date: isoToMdy(first),
     label: visitLabel(first),
     window_label: booking.windowLabel || "",

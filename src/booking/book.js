@@ -157,12 +157,9 @@ export class SlotBook {
   updatePlan(bookingId, patch, now) {
     const hold = this.state.holds[bookingId];
     if (!hold || hold.status !== "held" || hold.expiresAt <= now) return { ok: false, reason: "expired" };
-    let saveCard = !!patch.saveCard;
-    let saveCardLocked = false;
-    if (hold.saveCard && !saveCard) {
-      saveCard = true;
-      saveCardLocked = true;
-    }
+    // The customer's latest choice wins. Unticking turns saving off (consent).
+    const saveCard = !!patch.saveCard;
+    const saveCardLocked = false;
     hold.plan = patch.plan;
     hold.zone = patch.zone;
     hold.amountCents = patch.amountCents;
