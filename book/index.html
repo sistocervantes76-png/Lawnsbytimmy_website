@@ -498,12 +498,16 @@ function fillPayment(booking) {
   }
 }
 
+const PAYMENT_ELEMENT_OPTIONS = { wallets: { link: "never" } };
+
 async function mountPayment(booking) {
   fillPayment(booking);
   $("payment-element").textContent = "Loading the card form…";
   const stripe = await loadStripe();
   state.elements = stripe.elements({ clientSecret: booking.client_secret });
-  const payment = state.elements.create("payment");
+  // Card only. The PaymentIntent allows only "card", but Link rides on card and adds its own
+  // Bank ("$5 back") and Klarna tabs, which settle as card brand "link" with no real card details.
+  const payment = state.elements.create("payment", PAYMENT_ELEMENT_OPTIONS);
   $("payment-element").replaceChildren();
   payment.mount("#payment-element");
 }

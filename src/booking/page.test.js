@@ -63,6 +63,7 @@ function page({ slotsStatus = 200 } = {}) {
   let stripeLoaded = null;
   const stripeReady = new Promise((r) => { stripeLoaded = r; });
   const confirmed = [];
+  const created = [];
   const document = {
     getElementById: (id) => els[id],
     querySelectorAll: (sel) => radios.filter((r) => sel.split(",").some((s) => s.includes(`name=${r.name}]`))),
@@ -82,14 +83,14 @@ function page({ slotsStatus = 200 } = {}) {
     location: { origin: "https://book.test", search: "" },
     window: { scrollTo() {} },
     Stripe: () => ({
-      elements: () => ({ create: () => ({ mount() {} }), fetchUpdates: async () => {} }),
+      elements: () => ({ create: (type, options) => { created.push({ type, options }); return { mount() {} }; }, fetchUpdates: async () => {} }),
       confirmPayment: async () => { confirmed.push(calls.filter((c) => c.path === "/api/book/update").at(-1)?.body || null); return {}; },
     }),
   };
   ctx.window.Stripe = ctx.Stripe;
   vm.createContext(ctx);
   vm.runInContext(script, ctx);
-  return { els, radios, calls, confirmed, stripeLoaded, settle: () => new Promise((r) => setTimeout(r, 40)) };
+  return { els, radios, calls, confirmed, created, stripeLoaded, settle: () => new Promise((r) => setTimeout(r, 40)) };
 }
 
 async function toPayStep(p, { loadStripe = true } = {}) {
@@ -156,6 +157,14 @@ describe("book page", () => {
     assert.equal(last.body.save_card, false);
     assert.equal(last.body.plan, "package");
     assert.equal(p.confirmed.length, 1);
+  });
+
+  test("the card form is card only: Link (its Bank and Klarna tabs) is turned off", async () => {
+    const p = page();
+    await toPayStep(p);
+    assert.equal(p.created.length, 1);
+    assert.equal(p.created[0].type, "payment");
+    assert.equal(p.created[0].options?.wallets?.link, "never");
   });
 
   test("the confirmation shows the BK- booking reference", async () => {
