@@ -5,6 +5,9 @@
   "name": "lawnsbytimmy-website",
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
+  // ctx.exports is off at this date. The flag keeps SlotLedger available even
+  // when a deploy does not pass a newer compatibility date on the command line.
+  "compatibility_flags": ["enable_ctx_exports"],
   "assets": {
     "directory": "./",
     "binding": "ASSETS"

@@ -105,6 +105,49 @@ async function toPayStep(p, { loadStripe = true } = {}) {
   return { going };
 }
 
+const homeHtml = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+const homeScript = homeHtml.slice(
+  homeHtml.indexOf('<script id="bookPayScript">') + '<script id="bookPayScript">'.length,
+  homeHtml.indexOf("</script>", homeHtml.indexOf('<script id="bookPayScript">')),
+);
+
+function homePage(configResponse) {
+  const bookPay = { id: "bookPay", hidden: true };
+  const fetch = async () => {
+    if (typeof configResponse === "function") return configResponse();
+    return configResponse;
+  };
+  const ctx = { document: { getElementById: () => bookPay }, fetch };
+  vm.createContext(ctx);
+  vm.runInContext(homeScript, ctx);
+  return { bookPay, settle: () => new Promise((r) => setTimeout(r, 20)) };
+}
+
+describe("homepage book button", () => {
+  test("stays hidden until live booking is on, and stays hidden on any failure", async () => {
+    const live = homePage({ ok: true, json: async () => ({ enabled: true, test_mode: false }) });
+    assert.equal(live.bookPay.hidden, true);
+    await live.settle();
+    assert.equal(live.bookPay.hidden, false);
+
+    const testMode = homePage({ ok: true, json: async () => ({ enabled: true, test_mode: true }) });
+    await testMode.settle();
+    assert.equal(testMode.bookPay.hidden, true);
+
+    const closed = homePage({ ok: false, status: 404, json: async () => ({ error: "Not found" }) });
+    await closed.settle();
+    assert.equal(closed.bookPay.hidden, true);
+
+    const broken = homePage(() => { throw new Error("network"); });
+    await broken.settle();
+    assert.equal(broken.bookPay.hidden, true);
+
+    const badJson = homePage({ ok: true, json: async () => { throw new Error("not json"); } });
+    await badJson.settle();
+    assert.equal(badJson.bookPay.hidden, true);
+  });
+});
+
 describe("book page", () => {
   test("shows Loading… until config answers, never the closed card", async () => {
     const p = page();

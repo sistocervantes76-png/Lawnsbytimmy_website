@@ -893,12 +893,14 @@ describe("live keys and the closed switch", () => {
     assert.equal(prod.includes('"migrations"'), false);
     assert.match(workerSrc, /ledgerEnv/);
     assert.equal(prod.includes("BOOKING_MODE"), false);
+    assert.match(prod, /enable_ctx_exports/);
     assert.match(prod, /BOOKING_WORKER/);
     const testConfig = readFileSync(new URL("../../wrangler.booking-test.jsonc", import.meta.url), "utf8");
     assert.match(testConfig, /"workers_dev": true/);
     assert.match(testConfig, /"preview_urls": false/);
-    assert.match(home, /href="\/book\/"/);
-    assert.match(home, /Book &amp; pay/);
+    assert.match(home, /<a href="#quote-form" class="btn btn-primary">Get My Instant Quote<\/a>/);
+    assert.match(home, /<a href="\/book\/" class="btn btn-amber" id="bookPay" hidden>Book &amp; pay<\/a>/);
+    assert.match(home, /\.hero-ctas a\[hidden\] \{ display: none !important; \}/);
     assert.match(page, /Booking isn't open yet\./);
     assert.match(page, /I agree to receive text messages from Lawns by Timmy at the number provided/);
     assert.equal(page.includes("8\u201310 AM"), false);
