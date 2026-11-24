@@ -886,10 +886,12 @@ describe("live keys and the closed switch", () => {
     assert.match(workerSrc, /export \{ SlotLedger \}/);
     assert.equal(workerSrc.includes("STRIPE_SECRET_KEY"), false);
     assert.match(entry, /SlotLedger/);
-    assert.match(prod, /SLOT_LEDGER/);
     assert.match(prod, /SlotLedger/);
     assert.match(prod, /"storage": "sqlite"/);
+    assert.match(prod, /ctx\.exports\.SlotLedger/);
+    assert.equal(prod.includes('"name": "SLOT_LEDGER"'), false);
     assert.equal(prod.includes('"migrations"'), false);
+    assert.match(workerSrc, /ledgerEnv/);
     assert.equal(prod.includes("BOOKING_MODE"), false);
     assert.match(prod, /BOOKING_WORKER/);
     const testConfig = readFileSync(new URL("../../wrangler.booking-test.jsonc", import.meta.url), "utf8");
@@ -989,6 +991,22 @@ describe("live mode and package-only launch", () => {
     assert.equal(data.test_mode, false);
     assert.deepEqual(data.plans, ["package"]);
     assert.equal(data.publishableKey, LIVE_PK);
+  });
+
+  test("production uses ctx.exports.SlotLedger when the binding is not uploaded yet", async () => {
+    const ledger = new MemoryLedger({}, { now: () => NOW });
+    const env = liveEnv({ SLOT_LEDGER_TEST: undefined });
+    delete env.SLOT_LEDGER_TEST;
+    assert.equal(bookingMode(env), "off");
+    const closed = await worker.fetch(new Request("https://lawnsbytimmy.com/api/book/config"), env);
+    assert.equal(closed.status, 404);
+    const open = await worker.fetch(new Request("https://lawnsbytimmy.com/api/book/config"), env, {
+      exports: { SlotLedger: { getByName: () => ledger } },
+    });
+    assert.equal(open.status, 200);
+    const data = await open.json();
+    assert.equal(data.test_mode, false);
+    assert.deepEqual(data.plans, ["package"]);
   });
 
   test("per visit is refused when booking is package only", async () => {

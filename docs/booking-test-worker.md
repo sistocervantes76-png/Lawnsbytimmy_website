@@ -14,7 +14,7 @@ npx wrangler deploy -c wrangler.booking-test.jsonc
 
 That publishes a Worker named `lbt-booking-test` on `workers.dev`. It does not attach `lawnsbytimmy.com` and it does not change the `lawnsbytimmy-website` Worker. Wrangler prints the `workers.dev` hostname. Open `/book/` on that hostname.
 
-Do not run `wrangler deploy` without `-c` when you mean the test Worker. The default config is the production Worker. It binds the same `SLOT_LEDGER` class. That class is declared with `exports` (`storage: sqlite`) because the site build uploads a version and cannot apply a new migrations tag. The test Worker still uses the tag `v1-slot-ledger`. Booking stays closed on production until live mode is turned on.
+Do not run `wrangler deploy` without `-c` when you mean the test Worker. The default config is the production Worker. The slot ledger class is declared there with `exports` and `storage: sqlite`. The site build uploads a version, and that command cannot apply a new migrations tag or bind a class that has not been deployed yet. The Worker uses `ctx.exports.SlotLedger` until a `SLOT_LEDGER` binding can be added. The test Worker still binds `SLOT_LEDGER` and uses the tag `v1-slot-ledger`. Booking stays closed on production until live mode is turned on.
 
 ## Secrets
 

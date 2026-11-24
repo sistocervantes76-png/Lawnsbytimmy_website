@@ -33,6 +33,21 @@ function workerRole(env) {
   return role === "production" || role === "test" ? role : "";
 }
 
+// The production build uploads a version and cannot bind a class that has not
+// been provisioned yet. Until that binding exists, the same class is on ctx.exports.
+export function ledgerEnv(env, ctx) {
+  if (!env || env.SLOT_LEDGER || env.SLOT_LEDGER_TEST) return env;
+  const namespace = ctx?.exports?.SlotLedger;
+  if (!namespace || typeof namespace.getByName !== "function") return env;
+  return new Proxy(env, {
+    get(target, prop, receiver) {
+      if (prop === "SLOT_LEDGER") return namespace;
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
+
 export function bookingMode(env) {
   if (!env) return "off";
   if (!env.SLOT_LEDGER && !env.SLOT_LEDGER_TEST) return "off";

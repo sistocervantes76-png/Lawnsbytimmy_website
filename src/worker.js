@@ -12,7 +12,7 @@ import * as card from "./account/card.js";
 import * as stripeWebhook from "./stripe-webhook.js";
 import * as booking from "./booking/handlers.js";
 import * as bookingWebhook from "./booking/webhook.js";
-import { bookingMode } from "./booking/guard.js";
+import { bookingMode, ledgerEnv } from "./booking/guard.js";
 import { json } from "./account/lib.js";
 
 export { SlotLedger } from "./booking/ledger.js";
@@ -52,7 +52,8 @@ export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/$/, "");
-    if (bookingPaths.has(path) && bookingMode(env) === "off") return json({ error: "Not found" }, 404);
+    const activeEnv = bookingPaths.has(path) ? ledgerEnv(env, ctx) : env;
+    if (bookingPaths.has(path) && bookingMode(activeEnv) === "off") return json({ error: "Not found" }, 404);
     const route = routes[path];
     if (!route) {
       if (url.pathname.startsWith("/api/")) return json({ error: "Not found" }, 404);
@@ -63,6 +64,6 @@ export default {
     const method = req.method.charAt(0) + req.method.slice(1).toLowerCase(); // GET -> Get
     const handler = route[`onRequest${method}`];
     if (!handler) return json({ error: "Method not allowed" }, 405);
-    return handler({ request: req, env, ctx });
+    return handler({ request: req, env: activeEnv, ctx });
   },
 };

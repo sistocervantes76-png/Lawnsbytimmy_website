@@ -25,14 +25,10 @@
     { "name": "LOGIN_IP_LIMITER", "namespace_id": "2601", "simple": { "limit": 5, "period": 60 } },
     { "name": "LOGIN_EMAIL_LIMITER", "namespace_id": "2602", "simple": { "limit": 2, "period": 60 } }
   ],
-  // Same SQLite ledger binding as the test Worker. The class is declared with
-  // exports because the site build uploads a version, and that command refuses
-  // a new migrations tag. The test Worker still uses tag v1-slot-ledger.
-  "durable_objects": {
-    "bindings": [
-      { "name": "SLOT_LEDGER", "class_name": "SlotLedger" }
-    ]
-  },
+  // SQLite slot ledger. The site build uploads a version, so this uses exports
+  // rather than a migrations tag (the test Worker still uses v1-slot-ledger).
+  // A SLOT_LEDGER binding cannot be uploaded until this class has been deployed
+  // once. Until then the Worker reaches it through ctx.exports.SlotLedger.
   "exports": {
     "SlotLedger": { "type": "durable-object", "storage": "sqlite" }
   }
