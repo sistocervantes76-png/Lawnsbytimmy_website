@@ -394,8 +394,9 @@ describe("booking_paid contract", () => {
         assert.match(form.get("metadata[crm_customer_id]"), /^LC-\d+$/);
         assert.equal(form.get("setup_future_usage"), "off_session");
         assert.equal(form.get("payment_method_types[0]"), null);
-        assert.equal(form.get("automatic_payment_methods[enabled]"), "true");
-        assert.equal(form.get("automatic_payment_methods[allow_redirects]"), "never");
+        assert.equal(form.get("automatic_payment_methods[enabled]"), null);
+        assert.equal(form.get("automatic_payment_methods[allow_redirects]"), null);
+        assert.equal(form.get("allowed_payment_method_types[0]"), "card");
         return Response.json({ id: "pi_test_zone2", client_secret: "pi_test_zone2_secret_xxx" });
       }
       return Response.json({ error: { message: "unexpected" } }, { status: 500 });
@@ -496,7 +497,8 @@ describe("booking_paid contract", () => {
         const form = new URLSearchParams(call.body);
         assert.equal(form.get("setup_future_usage"), null);
         assert.equal(form.get("metadata[save_card]"), "no");
-        assert.equal(form.get("automatic_payment_methods[enabled]"), "true");
+        assert.equal(form.get("allowed_payment_method_types[0]"), "card");
+        assert.equal(form.get("automatic_payment_methods[enabled]"), null);
         return Response.json({ id: "pi_test_nosave", client_secret: "pi_test_nosave_secret_xxx" });
       }
       if (call.method === "POST" && url.pathname === "/v1/payment_intents/pi_test_nosave") {

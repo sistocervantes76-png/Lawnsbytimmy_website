@@ -375,9 +375,8 @@ export async function onSetup({ request, env }) {
     const form = new URLSearchParams();
     form.set("mode", "setup");
     form.set("currency", "usd");
-    // Stripe API 2026-09-30 refuses payment_method_types. Cards and wallets still show; redirect methods stay off.
-    form.set("automatic_payment_methods[enabled]", "true");
-    form.set("automatic_payment_methods[allow_redirects]", "never");
+    // Checkout Sessions reject payment_method_types and automatic_payment_methods. allowed_payment_method_types keeps this card-only.
+    form.set("allowed_payment_method_types[0]", "card");
     form.set("customer", customerId);
     form.set("client_reference_id", gated.customer.Customer_ID);
     for (const [key, value] of [

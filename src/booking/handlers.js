@@ -225,9 +225,8 @@ function paymentForm(booking, price, fields) {
   form.set("amount", String(price.amountCents));
   form.set("currency", "usd");
   form.set("customer", booking.stripeCustomerId);
-  // Stripe API 2026-09-30 refuses payment_method_types on PaymentIntents. Cards (and Link) come from automatic payment methods, with no redirect methods.
-  form.set("automatic_payment_methods[enabled]", "true");
-  form.set("automatic_payment_methods[allow_redirects]", "never");
+  // Same parameter as Checkout Sessions. payment_method_types and automatic_payment_methods are both rejected.
+  form.set("allowed_payment_method_types[0]", "card");
   form.set("description", description(price));
   const meta = {
     business: "lawns_by_timmy",
