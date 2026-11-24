@@ -375,8 +375,9 @@ export async function onSetup({ request, env }) {
     const form = new URLSearchParams();
     form.set("mode", "setup");
     form.set("currency", "usd");
-    // Approved plan: card only, so Apple Pay and Google Pay still show as card wallets.
-    form.set("payment_method_types[0]", "card");
+    // Stripe API 2026-09-30 refuses payment_method_types. Cards and wallets still show; redirect methods stay off.
+    form.set("automatic_payment_methods[enabled]", "true");
+    form.set("automatic_payment_methods[allow_redirects]", "never");
     form.set("customer", customerId);
     form.set("client_reference_id", gated.customer.Customer_ID);
     for (const [key, value] of [

@@ -225,7 +225,9 @@ function paymentForm(booking, price, fields) {
   form.set("amount", String(price.amountCents));
   form.set("currency", "usd");
   form.set("customer", booking.stripeCustomerId);
-  form.set("payment_method_types[0]", "card");
+  // Stripe API 2026-09-30 refuses payment_method_types on PaymentIntents. Cards (and Link) come from automatic payment methods, with no redirect methods.
+  form.set("automatic_payment_methods[enabled]", "true");
+  form.set("automatic_payment_methods[allow_redirects]", "never");
   form.set("description", description(price));
   const meta = {
     business: "lawns_by_timmy",
@@ -344,8 +346,10 @@ export async function onUpdate({ request, env }) {
   if (!hold || hold.status !== "held") return json({ error: "That hold expired. Please pick another arrival window." }, 409);
   const price = quotePrice({ zip: hold.zip, plan, yard: hold.yard });
   if (!price.payable) return json(quoteBody(price), 409);
-  const wantSave = !(body.value.save_card === false || body.value.save_card === "no");
-  const saveCard = hold.saveCard || wantSave;
+  // Omitted save_card keeps the choice stored on the hold. Sending false only turns saving off when it was already off.
+  const saveCard = body.value.save_card === undefined
+    ? !!hold.saveCard
+    : !(body.value.save_card === false || body.value.save_card === "no");
   const form = new URLSearchParams();
   form.set("amount", String(price.amountCents));
   form.set("description", description(price));
@@ -427,6 +431,10 @@ export async function onStatus({ request, env }) {
       await gated.ledger.release(booking.bookingId);
       booking = await gated.ledger.read(booking.bookingId);
     }
+  }
+  // The seat is already free once the hold time passes. Say so before Stripe cancels the PaymentIntent.
+  if (booking.status === "held" && booking.expiresAt <= Date.now()) {
+    booking = { ...booking, status: "expired" };
   }
   return json(statusBody(booking));
 }

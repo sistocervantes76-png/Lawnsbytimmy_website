@@ -16,7 +16,7 @@ import {
 } from "./config.js";
 import { forwardBookingPaid } from "./confirm.js";
 import { bookingMode } from "./guard.js";
-import { onConfig, onHold, onQuote, onSlots, onUpdate } from "./handlers.js";
+import { onConfig, onHold, onQuote, onSlots, onStatus, onUpdate } from "./handlers.js";
 import { parseAvailability } from "./slots.js";
 import { onRequestPost as onBookingWebhook } from "./webhook.js";
 import worker from "../worker.js";
@@ -393,6 +393,9 @@ describe("booking_paid contract", () => {
         assert.equal(form.get("metadata[plan]"), "per_visit");
         assert.match(form.get("metadata[crm_customer_id]"), /^LC-\d+$/);
         assert.equal(form.get("setup_future_usage"), "off_session");
+        assert.equal(form.get("payment_method_types[0]"), null);
+        assert.equal(form.get("automatic_payment_methods[enabled]"), "true");
+        assert.equal(form.get("automatic_payment_methods[allow_redirects]"), "never");
         return Response.json({ id: "pi_test_zone2", client_secret: "pi_test_zone2_secret_xxx" });
       }
       return Response.json({ error: { message: "unexpected" } }, { status: 500 });
@@ -478,6 +481,92 @@ describe("booking_paid contract", () => {
       });
       assert.equal(updated.status, 200);
       assert.equal((await updated.json()).amount_cents, 4500);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  test("a plan switch without save_card keeps saving off", async () => {
+    const env = testEnv();
+    const mock = installFetch((call) => {
+      if (call.url === HOOK) return new Response(JSON.stringify(sheet([])), { status: 200 });
+      const url = new URL(call.url);
+      if (url.pathname === "/v1/customers") return Response.json({ id: "cus_test_nosave" });
+      if (call.method === "POST" && url.pathname === "/v1/payment_intents") {
+        const form = new URLSearchParams(call.body);
+        assert.equal(form.get("setup_future_usage"), null);
+        assert.equal(form.get("metadata[save_card]"), "no");
+        assert.equal(form.get("automatic_payment_methods[enabled]"), "true");
+        return Response.json({ id: "pi_test_nosave", client_secret: "pi_test_nosave_secret_xxx" });
+      }
+      if (call.method === "POST" && url.pathname === "/v1/payment_intents/pi_test_nosave") {
+        const form = new URLSearchParams(call.body);
+        assert.equal(form.get("metadata[plan]"), "per_visit");
+        assert.equal(form.get("setup_future_usage"), null);
+        assert.equal(form.get("metadata[save_card]"), "no");
+        return Response.json({ id: "pi_test_nosave", client_secret: "pi_test_nosave_secret_xxx" });
+      }
+      return Response.json({ error: { message: "unexpected" } }, { status: 500 });
+    });
+    try {
+      const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+      const held = await onHold({
+        request: new Request("https://book.test/api/book/hold", {
+          method: "POST",
+          headers: { Origin: "https://book.test" },
+          body: JSON.stringify({
+            first_name: "Test", last_name: "Booker", phone: "9545550123", email: "booker@example.test",
+            address: "1 Test St", city: "Oakland Park", zip: "33309", yard: "yes", plan: "package",
+            date: slot.date, window_id: slot.windowId, save_card: false,
+          }),
+        }),
+        env,
+      });
+      assert.equal(held.status, 200);
+      const booking = await held.json();
+      const updated = await onUpdate({
+        request: new Request("https://book.test/api/book/update", {
+          method: "POST",
+          headers: { Origin: "https://book.test" },
+          body: JSON.stringify({ booking_id: booking.booking_id, plan: "per_visit" }),
+        }),
+        env,
+      });
+      assert.equal(updated.status, 200);
+      assert.equal((await updated.json()).save_card, false);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  test("an expired hold is reported as expired and the seat is free", async () => {
+    const env = testEnv();
+    const ledger = env.SLOT_LEDGER_TEST;
+    const slot = firstSlot(await ledger.list());
+    const held = await ledger.hold(holdInput("BK-aabbccddeeff0012", slot));
+    assert.equal(held.ok, true);
+    await ledger.attachPayment("BK-aabbccddeeff0012", {
+      paymentIntentId: "pi_test_expired",
+      stripeCustomerId: "cus_test_expired",
+    });
+    ledger.state.holds["BK-aabbccddeeff0012"].expiresAt = Date.now() - 1000;
+    const open = await ledger.list();
+    const day = open.days.find((item) => item.date === slot.date);
+    assert.equal(day.windows.some((window) => window.id === slot.windowId), true);
+    const mock = installFetch((call) => {
+      const url = new URL(call.url);
+      if (url.pathname === "/v1/payment_intents/pi_test_expired") {
+        return Response.json({ id: "pi_test_expired", status: "requires_payment_method" });
+      }
+      return Response.json({ error: { message: "unexpected" } }, { status: 500 });
+    });
+    try {
+      const res = await onStatus({
+        request: new Request("https://book.test/api/book/status?booking_id=BK-aabbccddeeff0012"),
+        env,
+      });
+      assert.equal(res.status, 200);
+      assert.equal((await res.json()).status, "expired");
     } finally {
       mock.restore();
     }
@@ -775,6 +864,9 @@ describe("live keys and the closed switch", () => {
     assert.match(entry, /SlotLedger/);
     assert.equal(prod.includes("SlotLedger"), false);
     assert.equal(prod.includes("BOOKING_MODE"), false);
+    const testConfig = readFileSync(new URL("../../wrangler.booking-test.jsonc", import.meta.url), "utf8");
+    assert.match(testConfig, /"workers_dev": true/);
+    assert.match(testConfig, /"preview_urls": false/);
     assert.equal(home.includes("/book/"), false);
     assert.match(page, /Booking isn't open yet\./);
     assert.match(page, /I agree to receive text messages from Lawns by Timmy at the number provided/);
