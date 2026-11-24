@@ -272,6 +272,8 @@ export async function onHold({ request, env }) {
   if (!planAllowed(env, fields.plan)) {
     return json({ payable: false, reason: "plan", error: "Online booking is the 4-visit package." }, 409);
   }
+  // Saving a card is only offered with per-visit. Package-only must not set setup_future_usage.
+  if (!planAllowed(env, "per_visit")) fields.saveCard = false;
   const price = quotePrice({ zip: fields.zip, plan: fields.plan, yard: fields.yard });
   if (!price.payable) return json(quoteBody(price), 409);
   try {
@@ -368,9 +370,11 @@ export async function onUpdate({ request, env }) {
   const price = quotePrice({ zip: hold.zip, plan, yard: hold.yard });
   if (!price.payable) return json(quoteBody(price), 409);
   // Omitted save_card keeps the choice stored on the hold. An explicit true or false is the customer's choice and always wins.
-  const saveCard = body.value.save_card === undefined
+  // Package-only ignores both: there is no approved consent line for saving a card.
+  let saveCard = body.value.save_card === undefined
     ? !!hold.saveCard
     : body.value.save_card === true || body.value.save_card === "yes";
+  if (!planAllowed(env, "per_visit")) saveCard = false;
   const form = new URLSearchParams();
   form.set("amount", String(price.amountCents));
   form.set("description", description(price));

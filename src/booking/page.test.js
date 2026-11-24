@@ -209,10 +209,19 @@ describe("book page", () => {
     assert.equal(live.els.planVisitChoice.hidden, true);
     assert.equal(live.els.payVisitChoice.hidden, true);
     assert.equal(live.els.visitOffer.hidden, true);
+    assert.equal(live.els.saveCard.hidden, true);
+    assert.equal(live.els.saveCardChoice.hidden, true);
+    assert.equal(live.els.tripFeeNote.hidden, true);
+    live.els.saveCard.checked = true;
+    await toPayStep(live);
+    assert.equal(live.calls.find((c) => c.path === "/api/book/hold").body.save_card, false);
     const testPage = page();
     await testPage.settle();
     assert.equal(testPage.els.testBanner.hidden, false);
     assert.equal(testPage.els.planVisitChoice.hidden, false);
+    assert.equal(testPage.els.saveCard.hidden, false);
+    assert.equal(testPage.els.saveCardChoice.hidden, false);
+    assert.equal(testPage.els.tripFeeNote.hidden, false);
   });
 
   test("the card form is card only: Link (its Bank and Klarna tabs) is turned off", async () => {

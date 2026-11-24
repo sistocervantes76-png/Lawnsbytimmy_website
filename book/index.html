@@ -165,7 +165,7 @@
         <h1>Your first cut is <span id="firstCut">$19</span></h1>
         <p>With the 4-visit bi-weekly package — <strong id="packagePrice">$154</strong> up front (<span id="firstCutInline">$19</span> first, then 3 at $45).</p>
         <p id="visitOffer">Or <strong id="visitPrice">$45</strong> / visit, bi-weekly. <span id="zone2Hint"></span></p>
-        <p class="note">Recurring bi-weekly service only, not a one-time cut. Some Fort Lauderdale ZIPs add a $10 trip fee to per-visit service. This price is for a grass area up to 5,000 sq ft.</p>
+        <p class="note">Recurring bi-weekly service only, not a one-time cut. <span id="tripFeeNote">Some Fort Lauderdale ZIPs add a $10 trip fee to per-visit service. </span>This price is for a grass area up to 5,000 sq ft.</p>
       </div>
       <form id="details" class="card">
         <h2>Your details</h2>
@@ -254,7 +254,7 @@
         <div class="price total"><span>Due today</span><strong id="payDue"></strong></div>
         <p class="note" id="holdNote"></p>
         <ul id="visitList"></ul>
-        <label class="choice"><input type="checkbox" id="saveCard"> Save my card for future visits</label>
+        <label class="choice" id="saveCardChoice"><input type="checkbox" id="saveCard"> Save my card for future visits</label>
         <div id="payment-element" style="margin: 12px 0"></div>
         <button type="button" id="payBtn">Pay and book</button>
         <button type="button" class="secondary" id="payBack">Pick a different time</button>
@@ -359,14 +359,28 @@ function setPlan(plan) {
   }
 }
 
+function perVisitOffered(config) {
+  const plans = Array.isArray(config?.plans) && config.plans.length ? config.plans : ["package", "per_visit"];
+  return plans.includes("per_visit");
+}
+
+function saveCardChosen() {
+  // Package-only launch has no approved line for saving a card. Never send a tick.
+  if (!perVisitOffered(state.config)) return false;
+  return $("saveCard").checked === true;
+}
+
 function applyPlans(config) {
-  const plans = Array.isArray(config.plans) && config.plans.length ? config.plans : ["package", "per_visit"];
-  const visit = plans.includes("per_visit");
-  for (const id of ["planVisitChoice", "payVisitChoice", "visitOffer"]) {
+  const visit = perVisitOffered(config);
+  for (const id of ["planVisitChoice", "payVisitChoice", "visitOffer", "saveCard", "saveCardChoice", "tripFeeNote"]) {
     const el = $(id);
     if (el) el.hidden = !visit;
   }
-  if (!visit) setPlan("package");
+  if (!visit) {
+    const box = $("saveCard");
+    if (box) box.checked = false;
+    setPlan("package");
+  }
 }
 
 function fillOffer(config) {
@@ -470,7 +484,7 @@ $("continuePay").addEventListener("click", async () => {
       ...fields,
       date: state.slot.date,
       window_id: state.slot.window.id,
-      save_card: $("saveCard").checked,
+      save_card: saveCardChosen(),
     };
     if (state.booking?.booking_id) body.replace_booking_id = state.booking.booking_id;
     const booking = await api("/api/book/hold", { method: "POST", body: JSON.stringify(body) });
@@ -552,7 +566,7 @@ async function sendUpdate() {
       body: JSON.stringify({
         booking_id: state.booking.booking_id,
         plan,
-        save_card: $("saveCard").checked,
+        save_card: saveCardChosen(),
       }),
     });
     state.booking.amount_cents = updated.amount_cents;

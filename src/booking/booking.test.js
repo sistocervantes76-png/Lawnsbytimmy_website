@@ -1095,6 +1095,36 @@ describe("save-card consent, booking reference, schedule outage", () => {
     });
   }
 
+  test("package-only ignores a ticked save-card box", async () => {
+    const env = testEnv({ BOOKING_PLANS: "package" });
+    const seen = [];
+    const mock = stripeMock(seen);
+    try {
+      const slot = firstSlot(await env.SLOT_LEDGER_TEST.list());
+      const heldRes = await onHold({
+        request: holdRequest({ date: slot.date, window_id: slot.windowId, save_card: true }),
+        env,
+      });
+      assert.equal(heldRes.status, 200);
+      const held = await heldRes.json();
+      assert.equal(held.save_card, false);
+      assert.equal(seen[0].form.get("setup_future_usage"), null);
+      assert.equal(seen[0].form.get("metadata[save_card]"), "no");
+      assert.equal((await env.SLOT_LEDGER_TEST.read(held.booking_id)).saveCard, false);
+      const updated = await onUpdate({
+        request: updateRequest({ booking_id: held.booking_id, plan: "package", save_card: true }),
+        env,
+      });
+      assert.equal(updated.status, 200);
+      assert.equal((await updated.json()).save_card, false);
+      assert.equal(seen[1].form.get("setup_future_usage"), null);
+      assert.equal(seen[1].form.get("metadata[save_card]"), "no");
+      assert.equal((await env.SLOT_LEDGER_TEST.read(held.booking_id)).saveCard, false);
+    } finally {
+      mock.restore();
+    }
+  });
+
   test("a hold without save_card does not save the card", async () => {
     const env = testEnv();
     const seen = [];
