@@ -17,7 +17,7 @@ import {
 import { forwardBookingPaid } from "./confirm.js";
 import { bookingMode } from "./guard.js";
 import { onConfig, onHold, onQuote, onSlots, onStatus, onUpdate } from "./handlers.js";
-import { parseAvailability } from "./slots.js";
+import { openSlots, parseAvailability } from "./slots.js";
 import { onRequestPost as onBookingWebhook } from "./webhook.js";
 import worker from "../worker.js";
 
@@ -1027,5 +1027,56 @@ describe("save-card consent, booking reference, schedule outage", () => {
     } finally {
       mock.restore();
     }
+  });
+});
+
+describe("blocked dates (holidays, days off)", () => {
+  const now = Date.parse("2026-11-18T20:00:00.000Z");
+  const startDates = (env) => openSlots({ now, config: bookingConfig(env) }).days.map((day) => day.date);
+  const allVisits = (env) => openSlots({ now, config: bookingConfig(env) }).days
+    .flatMap((day) => day.windows.flatMap((window) => window.visits.map((visit) => visit.iso)));
+
+  test("no list means nothing is blocked", () => {
+    assert.equal(bookingConfig({}).blockedDates.size, 0);
+    assert.ok(startDates({}).includes("2026-11-26"));
+  });
+
+  test("a blocked date is not offered as a start day or as any later visit", () => {
+    const env = { BOOKING_BLOCKED_DATES: "2026-11-26, 2026-12-25" };
+    assert.deepEqual([...bookingConfig(env).blockedDates].sort(), ["2026-11-26", "2026-12-25"]);
+    const starts = startDates(env);
+    assert.ok(!starts.includes("2026-11-26"));
+    // 12/25 is visit 2 of a 12/11 start and visit 3 of a 11/27 start, so those starts are not offered either.
+    assert.ok(!starts.includes("2026-12-11"));
+    assert.ok(!starts.includes("2026-11-27"));
+    assert.ok(starts.includes("2026-11-28"));
+    const visits = allVisits(env);
+    assert.ok(!visits.includes("2026-11-26"));
+    assert.ok(!visits.includes("2026-12-25"));
+  });
+
+  test("blockedDates in BOOKING_CONFIG_JSON is honoured and merged with the env list", () => {
+    const env = { BOOKING_BLOCKED_DATES: "2026-11-26", BOOKING_CONFIG_JSON: JSON.stringify({ blockedDates: ["2026-12-01"] }) };
+    assert.deepEqual([...bookingConfig(env).blockedDates].sort(), ["2026-11-26", "2026-12-01"]);
+    const starts = startDates(env);
+    assert.ok(!starts.includes("2026-11-26"));
+    assert.ok(!starts.includes("2026-12-01"));
+  });
+
+  test("bad entries are ignored", () => {
+    const config = bookingConfig({ BOOKING_BLOCKED_DATES: "2026-02-30 tomorrow 12/25/2026 2026-13-01 2026-11-26" });
+    assert.deepEqual([...config.blockedDates], ["2026-11-26"]);
+  });
+
+  test("a hold on a blocked date is refused as taken", async () => {
+    const env = testEnv({ BOOKING_BLOCKED_DATES: "" });
+    const open = firstSlot(await env.SLOT_LEDGER_TEST.list());
+    const blockedEnv = testEnv({ BOOKING_BLOCKED_DATES: open.date });
+    const ledger = new MemoryLedger(blockedEnv);
+    const listed = await ledger.list();
+    assert.ok(!listed.days.some((day) => day.date === open.date));
+    const held = await ledger.hold(holdInput("BK-00000000000000b1", { date: open.date, windowId: open.windowId }));
+    assert.equal(held.ok, false);
+    assert.equal(held.reason, "taken");
   });
 });

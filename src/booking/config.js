@@ -126,6 +126,26 @@ function asWindow(row) {
   return { id, label, start, end };
 }
 
+// Days the owner is closed (holidays, days off). YYYY-MM-DD in Eastern time.
+// From BOOKING_BLOCKED_DATES (comma or space separated) and/or BOOKING_CONFIG_JSON "blockedDates".
+// Bad entries are ignored. Empty means nothing is blocked.
+function blockedDateList(...sources) {
+  const out = new Set();
+  for (const source of sources) {
+    const items = Array.isArray(source) ? source : String(source || "").split(/[\s,]+/);
+    for (const item of items) {
+      const iso = String(item || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+      const [y, m, d] = iso.split("-").map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
+      if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) continue;
+      out.add(iso);
+      if (out.size >= 366) return out;
+    }
+  }
+  return out;
+}
+
 function clampedInt(value, min, max) {
   const number = Number(value);
   if (!Number.isInteger(number) || number < min || number > max) return null;
@@ -143,12 +163,14 @@ export function bookingConfig(env = {}) {
     holdMinutes: 15,
     visitOffsetsDays: [0, 14, 28, 42],
     windowsConfirmed: String(env.BOOKING_WINDOWS_CONFIRMED || "").trim() === "yes",
+    blockedDates: blockedDateList(env.BOOKING_BLOCKED_DATES),
     configWarning: "",
   };
   const raw = String(env.BOOKING_CONFIG_JSON || "").trim();
   if (!raw) return config;
   try {
     const over = JSON.parse(raw);
+    if (Array.isArray(over.blockedDates)) config.blockedDates = blockedDateList(env.BOOKING_BLOCKED_DATES, over.blockedDates);
     if (Array.isArray(over.windows)) {
       const windows = over.windows.map(asWindow).filter(Boolean);
       if (windows.length) config.windows = windows;

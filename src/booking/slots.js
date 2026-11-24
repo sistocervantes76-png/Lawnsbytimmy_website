@@ -203,6 +203,8 @@ function usageForDate(date, config, holds, jobs, blocks) {
 }
 
 export function seatsLeft(date, window, config, holds, jobs, blocks) {
+  // A blocked date has no seats, so any 4-visit series that lands on it is not offered or held.
+  if (config.blockedDates?.has?.(date)) return 0;
   const usage = usageForDate(date, config, holds, jobs, blocks).get(window.id);
   if (!usage || usage.blocked) return 0;
   return Math.max(0, config.capPerWindow - usage.jobs - usage.holds);

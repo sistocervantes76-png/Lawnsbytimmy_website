@@ -34,6 +34,7 @@ Optional plain vars on the test Worker:
 | Name | What it is |
 |---|---|
 | `BOOKING_WINDOWS_CONFIRMED` | `yes` after the owner accepts the arrival windows. Until then the page says they are a proposal. |
+| `BOOKING_BLOCKED_DATES` | Optional. Days with no visits (holidays, days off), `YYYY-MM-DD` Eastern, comma or space separated, e.g. `2026-11-26,2026-12-25`. A day is closed for every window, and a 4-visit series that would land on it is not offered. Also accepted as `"blockedDates": [...]` in `BOOKING_CONFIG_JSON`. Empty means nothing is blocked. The owner picks the dates. |
 | `BOOKING_CONFIG_JSON` | Optional schedule override. Example: `{"windows":[{"id":"0800-1000","label":"8–10 AM","start":"08:00","end":"10:00"},{"id":"1000-1200","label":"10 AM–12 PM","start":"10:00","end":"12:00"}],"capPerWindow":2,"minLeadDays":2,"maxLeadDays":21,"holdMinutes":15}` |
 
 Prices stay in code: $154 for the package, $45 per visit, $55 per visit in zone 2. The ZIP decides the price on the server.
